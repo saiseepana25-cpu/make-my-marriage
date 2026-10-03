@@ -1,0 +1,47 @@
+const paths = {
+  check: "m5 12 4 4L19 6",
+  check_circle: "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0ZM7 12l3 3 7-7",
+  cancel: "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0ZM8 8l8 8m0-8-8 8",
+  pending: "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0ZM7 12h.01M12 12h.01M17 12h.01",
+  shield: "M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6Z",
+  verified_user: "M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6ZM8 12l3 3 5-6",
+  verified: "m12 2 3 2 4 .5.5 4 2 3-2 3-.5 4-4 .5-3 2-3-2-4-.5-.5-4-2-3 2-3 .5-4 4-.5ZM8 12l3 3 5-6",
+  person: "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21v-2a8 8 0 0 1 16 0v2Z",
+  group: "M14 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM2 21v-2a8 8 0 0 1 16 0v2ZM17 3a4 4 0 0 1 0 8m3 10v-2a7 7 0 0 0-3-6",
+  diversity_3: "M14 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM6 21v-4a5 5 0 0 1 10 0v4ZM4 7a2 2 0 1 1 0-4m16 4a2 2 0 1 0 0-4M2 19v-5a3 3 0 0 1 3-3m17 8v-5a3 3 0 0 0-3-3",
+  family_restroom: "M8 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM2 21V11h6v10M22 21V11h-6v10M22 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM14 13a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM10 21v-4h4v4",
+  history_edu: "M4 3h10l4 4v6M4 3v18h11M7 7h4M7 11h5m3 6 6-6 2 2-6 6-4 1Z",
+  chat: "M21 3H3v14h5v4l5-4h8Z",
+  table_view: "M3 3h18v18H3ZM3 8h18M3 14h18M9 8v13",
+  call: "m7 3 3 5-3 3c2 3 3 4 6 6l3-3 5 3c0 4-3 5-6 4C8 19 5 16 3 9c-1-3 0-6 4-6Z",
+  drive_folder_upload: "M3 7h7l2 2h9v12H3ZM3 7V4h6l2 3m1 11v-6m-3 3 3-3 3 3",
+  arrow_forward: "M4 12h16m-7-7 7 7-7 7",
+  supervised_user_circle: "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0ZM13 9a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM4 19a6 6 0 0 1 12-3m0-6a2 2 0 1 1 0 4m1 2a4 4 0 0 1 4 3",
+  account_balance_wallet: "M3 5h16v4H3v12h18V9M3 5V3h15v2M21 12h-6v5h6m-3-2.5h.01",
+  share: "M9 12 17 5m-8 7 8 7M9 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM22 4a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM22 20a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+  mail: "M3 5h18v14H3ZM3 5l9 7 9-7",
+  how_to_reg: "M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM2 21v-2a7 7 0 0 1 11-6m1 4 3 3 5-6",
+  account_balance: "m2 8 10-5 10 5ZM3 21h18M5 9v9m7-9v9m7-9v9M3 18h18",
+  pie_chart: "M12 2v10h10A10 10 0 0 0 12 2Zm-3 1a10 10 0 1 0 12 12H9Z",
+  link: "m10 13 4-4M8 16l-1 1a4 4 0 0 1-6-6l5-5a4 4 0 0 1 6 0m4 2 1-1a4 4 0 0 1 6 6l-5 5a4 4 0 0 1-6 0",
+  sentiment_satisfied: "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0ZM7 9h.01M17 9h.01M7 14a6 6 0 0 0 10 0",
+  calendar_month: "M3 5h18v16H3ZM7 2v6m10-6v6M3 10h18M7 14h.01M12 14h.01M17 14h.01M7 18h.01M12 18h.01",
+  near_me: "M3 11 21 3l-8 18-2-8Z",
+  photo_camera: "M2 7h5l2-3h6l2 3h5v14H2ZM16 13a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z",
+  photo_library: "M5 2h17v17H5ZM2 5v17h17M8 15l4-5 3 3 4-4 3 6M10 6h.01",
+  no_accounts: "M16 7a4 4 0 0 0-7-3M3 21v-2a8 8 0 0 1 12-7M2 2l20 20",
+  visibility_off: "M3 8c2-3 5-5 9-5 6 0 10 9 10 9s-1 3-5 6M2 12s4 9 10 9c2 0 4-1 6-2M2 2l20 20m-12-10a3 3 0 0 0 4 4",
+  admin_panel_settings: "M12 3 4 6v6c0 5 8 9 8 9m0-18 8 3v5m-3 0a3 3 0 1 1 0 6m-5 5v-2a5 5 0 0 1 10 0v2",
+  favorite: "M12 21 3 12a6 6 0 0 1 9-8 6 6 0 0 1 9 8Z",
+  menu: "M3 6h18M3 12h18M3 18h18",
+  close: "M5 5l14 14M19 5 5 19",
+  expand_more: "m6 9 6 6 6-6",
+};
+
+export function Icon({ name, className = "" }: { name: keyof typeof paths; className?: string }) {
+  return (
+    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={`inline-block size-[1em] shrink-0 ${className}`}>
+      <path d={paths[name]} />
+    </svg>
+  );
+}

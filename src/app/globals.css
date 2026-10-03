@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../components/marketing/landing-tokens.css";
 
 :root {
   --background: #faf7f2;
@@ -22,8 +23,33 @@
 }
 
 @layer base {
-  a:focus-visible, button:focus-visible {
+  a:focus-visible, button:focus-visible, summary:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 4px;
+  }
+}
+
+.landing-page [id] {
+  scroll-margin-top: 6rem;
+}
+
+.landing-page summary::-webkit-details-marker {
+  display: none;
+}
+
+.landing-page summary:focus-visible {
+  outline-offset: -3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.landing-page) {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-page *, .landing-page *::before, .landing-page *::after {
+    transition: none !important;
+    animation: none !important;
   }
 }

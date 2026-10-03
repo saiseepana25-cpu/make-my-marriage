@@ -10,6 +10,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Make My Marriage development rules
 
+- Before development, read docs/PROJECT_STATUS.md to understand completed milestones, current implementation limits and the latest handoff.
+- After completing a major feature or making a substantial change to an existing feature, update docs/PROJECT_STATUS.md before handing work back. Keep the milestone summary current and preserve dated progress entries with implemented scope, actual validation results, remaining limitations or open decisions, and the next agreed step. Record partial or blocked work honestly; planned work is not completed work. The status file tracks implementation and does not override the specifications.
 - Before architectural changes, read every relevant Markdown document in /docs completely. /docs is the primary source of truth. Read FOUNDATION_DECISIONS.md for known conflicts; it records questions, not amended specifications.
 - Report conflicting sources and the clarification required. Stop the affected implementation; do not silently choose a competing requirement.
 - Keep the approved V1 full-stack modular monolith: Next.js App Router, React, strict TypeScript, npm, Tailwind CSS, Node.js Next.js Route Handlers under /api/v1, MongoDB Atlas/Mongoose, AWS S3 and Vercel/Vercel Cron.
