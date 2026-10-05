@@ -114,8 +114,12 @@
   --font-label-sm: var(--font-manrope);
 }
 
-.landing-page {
+.landing-page, .app-theme {
   --primary: #520d22;
+  --primary-hover: #3f0015;
+  --foreground: #1a1b1e;
+  --border: #e7dce0;
+  --muted: #544245;
   --landing-on-primary: #ffffff;
   --landing-on-secondary-container: #67645e;
   --landing-on-primary-fixed: #3f0015;

@@ -1,6 +1,6 @@
 # Foundation decisions and implementation boundaries
 
-The four original V1 documents remain unchanged and authoritative. This file records conflicts discovered during scaffolding; it does not resolve or override them.
+This file records conflicts discovered during scaffolding; it does not itself resolve or override specifications. The approved 2026-10-05 authentication amendment is documented in [AUTHENTICATION_DECISIONS.md](AUTHENTICATION_DECISIONS.md) and referenced by the four V1 documents. It resolves atomic registration, session storage, password policy and auth counter storage; other conflicts remain open.
 
 ## Conflicts requiring clarification
 
@@ -10,7 +10,7 @@ The four original V1 documents remain unchanged and authoritative. This file rec
 | Households | PRD FR-10/11/15 and acceptance criteria require household records/RSVP; DATABASE_DESIGN §5.5/12 and API_DESIGN §12 use individual guests and exclude a households collection. | Confirm individual guests plus optional familyName versus household entities. No household architecture is implemented. |
 | Receipts/documents | PRD FR-09/24 includes attachments; SYSTEM_DESIGN §10/15, DATABASE_DESIGN §12 and API_DESIGN §24 exclude them. | Confirm the narrowed image-only scope. No attachment architecture is implemented. |
 | Internal notifications | PRD FR-22 requires read/unread notifications; SYSTEM_DESIGN §3 specifies email only; DATABASE_DESIGN §12 excludes notifications. | Confirm email plus activities versus a notification center. No notification center/collection is implemented. |
-| Registration/onboarding | API_DESIGN §6 allows users without weddingId and §8 creates a wedding after authentication; DATABASE_DESIGN §5.1 requires weddingId and §9.1 creates the wedding and OWNER together. | Choose atomic wedding/owner onboarding or amend the user schema. The model follows the exact DB contract; no registration persistence is implemented. |
+| Registration/onboarding — resolved 2026-10-05 | API_DESIGN originally allowed users without weddingId; DATABASE_DESIGN requires weddingId. | Approved atomic wedding/OWNER/session creation after the two-step signup. See AUTHENTICATION_DECISIONS.md and amended API_DESIGN. |
 | Invitations | API_DESIGN §6 requires signed invitation tokens; SYSTEM_DESIGN §15 excludes invitation tokens. | Clarify whether stateless signed family invitations are allowed or all invitation tokens are excluded. No token mechanism is chosen. |
 | Authentication scope | PRD FR-01/§20 leaves providers TBD; SYSTEM_DESIGN §3/15 and API_DESIGN §5 require email/password and exclude Google/OTP. | The user's scaffold request explicitly authorizes email/password utilities only. Alternative providers are not implemented. |
 | Cron HTTP method | API_DESIGN §16 specifies POST; Vercel Cron invokes GET (https://vercel.com/docs/cron-jobs). | Approve a GET trigger or a supported integration. Only secret checking/service contracts are prepared; no live endpoint/schedule is installed. |
@@ -19,9 +19,7 @@ The four original V1 documents remain unchanged and authoritative. This file rec
 
 ## Open foundation decisions
 
-- Session persistence: API_DESIGN requires a server-side cookie with HttpOnly, Secure in production, and SameSite. Storage, expiry, revocation, reset state and exact strategy are not defined. A SessionService contract and fail-closed adapter are provided. No JWT, authentication framework, cookie format or sessions collection is chosen.
-- Password strength: the credential foundation enforces non-empty passwords and bcrypt's 72-byte UTF-8 limit only. Approve the registration/reset minimum-strength policy before enabling account creation; these helpers are not a completed signup workflow.
-- Durable rate limits: API_DESIGN §19 permits MongoDB counters but DATABASE_DESIGN §2/3 permits only eight collections. Decide where atomic counters/TTL expiry belong before enabling sensitive endpoints. An interface and unavailable adapter are provided; no in-memory production limiter or ninth collection is created.
+- Resolved authentication decisions (2026-10-05): opaque hashed-token sessions with fixed 30-day expiry; 8-character registration minimum and 72-byte bcrypt maximum; exactly two additional infrastructure collections, sessions and rate_limits. See AUTHENTICATION_DECISIONS.md for the full approved contract. Password reset remains deferred.
 - Email: provider, launch notification scope, delivery retry/idempotency policy remain open. A development adapter reports `not-sent`; production defaults to unavailable.
 - Uploads: maximum file size, allowed image formats and per-wedding storage quotas need approval. The S3 utility requires an explicit policy from its caller. No presign/complete endpoint is enabled. Completion must verify object ownership, MIME type and size using S3 before inserting metadata, never trust a client-reported successful upload.
 - Reminders: cadence, event reminder deduplication/state (not in events schema), retry and delivery policy remain open. Task reminderSentAt is retained exactly as documented. No schedule is installed.
@@ -36,7 +34,9 @@ The full npm audit reports five high findings in the development-only Next lint 
 
 Rechecked on 2026-10-03 during the review fixes: `npm view braces version` still reports 3.0.3 and the full audit still reports the same five findings. No compatible patched braces release is available, so no dependency downgrade or forced audit fix is applied.
 
-## Safe foundation behavior
+## Original scaffold behavior (historical)
+
+This section records the pre-authentication scaffold. Consult PROJECT_STATUS.md for current implementation progress.
 
 Marketing, auth and public wedding routes are static placeholders with no domain data. Dashboard routes use the server-side current-user boundary and redirect unauthenticated visitors to login. The session adapter returns no user until a strategy is integrated; there is no mock login or authorization bypass.
 

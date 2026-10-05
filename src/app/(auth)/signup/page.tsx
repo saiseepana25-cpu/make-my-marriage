@@ -1,6 +1,11 @@
-import { PlaceholderPage } from "@/components/shared/placeholder-page";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/features/auth/current-user";
+import { AuthForm } from "@/components/auth/auth-form";
 
-export default function Page() {
-  return <PlaceholderPage title="Create an account" description="Start planning your wedding with your family." />;
+export const metadata: Metadata = { title: "Create an account" };
+
+export default async function Page() {
+  if (await getCurrentUser()) redirect("/dashboard");
+  return <AuthForm mode="signup" />;
 }
-

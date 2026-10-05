@@ -6,6 +6,7 @@ export class AppError extends Error {
     message: string,
     public readonly status: number,
     public readonly details: string[] = [],
+    public readonly retryAfterSeconds?: number,
   ) {
     super(message);
     this.name = "AppError";
@@ -15,4 +16,3 @@ export class AppError extends Error {
 export function unavailable(feature: string): AppError {
   return new AppError("SERVICE_UNAVAILABLE", `${feature} is not configured yet.`, 503);
 }
-

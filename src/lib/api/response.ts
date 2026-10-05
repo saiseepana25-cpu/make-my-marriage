@@ -45,7 +45,10 @@ export function apiError(error: unknown, operation = "unspecified") {
   return NextResponse.json<ApiResponse<never>>({
     success: false, data: null, message: known.message,
     error: { code: known.code, details: known.details },
-  }, { status: known.status, headers: { "Cache-Control": "no-store" } });
+  }, { status: known.status, headers: {
+    "Cache-Control": "no-store",
+    ...(known.retryAfterSeconds ? { "Retry-After": String(known.retryAfterSeconds) } : {}),
+  } });
 }
 
 export async function handleApi(handler: () => Promise<Response> | Response, operation = "unspecified"): Promise<Response> {

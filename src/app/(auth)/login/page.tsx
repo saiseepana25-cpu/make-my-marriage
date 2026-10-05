@@ -1,6 +1,11 @@
-import { PlaceholderPage } from "@/components/shared/placeholder-page";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/features/auth/current-user";
+import { AuthForm } from "@/components/auth/auth-form";
 
-export default function Page() {
-  return <PlaceholderPage title="Log in" description="Welcome back. Sign in to plan with your family." />;
+export const metadata: Metadata = { title: "Log in" };
+
+export default async function Page() {
+  if (await getCurrentUser()) redirect("/dashboard");
+  return <AuthForm mode="login" />;
 }
-

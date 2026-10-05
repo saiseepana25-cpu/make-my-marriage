@@ -5,11 +5,12 @@ import { rateLimiter } from "@/services/rate-limit/rate-limiter";
 import { DevelopmentEmailService, emailService } from "@/services/email/email-service";
 import { requireCronAuthorization } from "@/services/cron/reminders";
 
-test("pending adapters cannot silently enable authentication or abuse-prone endpoints", async () => {
+test("authentication remains fail-closed without configuration or a valid session", async () => {
   expect(await sessionService.read("untrusted-cookie")).toBeNull();
-  await expect(sessionService.create("user")).rejects.toMatchObject({ status: 503 });
+  await expect(sessionService.create("user")).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+  vi.stubEnv("AUTH_RATE_LIMIT_SECRET", "");
   await expect(rateLimiter.consume({ scope: "login", key: "test", limit: 5, windowSeconds: 60 }))
-    .rejects.toMatchObject({ status: 503 });
+    .rejects.toMatchObject({ name: "ConfigurationError" });
 });
 
 test("development emails explicitly report not sent and production refuses the adapter", async () => {

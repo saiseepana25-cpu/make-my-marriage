@@ -7,4 +7,5 @@ export { GuestModel } from "./guest";
 export { ExpenseModel } from "./expense";
 export { PhotoModel } from "./photo";
 export { ActivityModel } from "./activity";
-
+export { SessionModel } from "./session";
+export { RateLimitModel } from "./rate-limit";

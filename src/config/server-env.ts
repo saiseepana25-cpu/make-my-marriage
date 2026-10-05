@@ -2,7 +2,7 @@ import "server-only";
 
 type RequiredServerEnv =
   | "MONGODB_URI" | "AWS_REGION" | "AWS_S3_BUCKET"
-  | "AWS_ACCESS_KEY_ID" | "AWS_SECRET_ACCESS_KEY" | "CRON_SECRET";
+  | "AWS_ACCESS_KEY_ID" | "AWS_SECRET_ACCESS_KEY" | "CRON_SECRET" | "AUTH_RATE_LIMIT_SECRET";
 
 export class ConfigurationError extends Error {
   constructor(public readonly variable: RequiredServerEnv) {

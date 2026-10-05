@@ -19,6 +19,8 @@ Figure 1. High-level architecture flow for Make My Marriage V1
 
 # 1. Document Purpose
 
+Approved amendment (2026-10-05): [AUTHENTICATION_DECISIONS.md](AUTHENTICATION_DECISIONS.md) finalizes atomic signup, 30-day database sessions, and MongoDB-backed auth limits. Email verification and password recovery are deferred from this milestone.
+
 This document defines the finalized system design and architecture for Make My Marriage V1. It captures the agreed product-architecture decisions, high-level request flow, component responsibilities, data design, security and validation approach, deployment model, and the implementation plan for V1.
 
 # 2. Product Context
@@ -173,7 +175,7 @@ Accessible without login. Example URL: makemymarriage.in/wedding/sai-priya. Anyo
 
 # 9. Database Design (MongoDB Atlas)
 
-V1 uses one MongoDB database with eight core collections.
+V1 uses one MongoDB database with eight core business collections and the two approved infrastructure collections, sessions and rate_limits, defined in AUTHENTICATION_DECISIONS.md.
 
 - users
 

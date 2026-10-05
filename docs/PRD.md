@@ -15,6 +15,8 @@ Everything your family needs to organize the wedding, together, in one place.
 
 # 1. Executive Summary
 
+Approved authentication milestone (2026-10-05): [AUTHENTICATION_DECISIONS.md](AUTHENTICATION_DECISIONS.md) specifies email/password, two-step signup saving wedding and OWNER together, immediate dashboard access, an 8-character password minimum, and 30-day sessions. Password recovery and email verification are deferred from this milestone; broader product requirements below are retained.
+
 Make My Marriage is a web-based wedding planning and collaboration platform designed specifically for Indian weddings.
 
 Indian weddings typically involve multiple ceremonies, large guest lists, several family members, many responsibilities, expenses, invitations, photos, and significant coordination.

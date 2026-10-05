@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { connectDatabase } from "@/lib/db";
 import { AppError } from "@/lib/api/errors";
 import { UserModel } from "@/models/user";
+import { WeddingModel } from "@/models/wedding";
 import { sessionService } from "@/features/auth/session";
 import type { CurrentUser } from "@/types/domain";
 
@@ -15,7 +16,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   await connectDatabase();
   const user = await UserModel.findById(identity.userId)
     .select("weddingId name email role relationshipType").lean();
-  if (!user) return null;
+  if (!user || !await WeddingModel.exists({ _id: user.weddingId })) return null;
   return {
     id: user._id.toString(), weddingId: user.weddingId.toString(),
     name: user.name, email: user.email, role: user.role,
@@ -34,4 +35,3 @@ export async function requirePageUser(): Promise<CurrentUser> {
   if (!user) redirect("/login");
   return user;
 }
-

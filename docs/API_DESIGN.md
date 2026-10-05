@@ -17,6 +17,8 @@ Figure 1. High-level API architecture and request flow for Make My Marriage V1
 
 # 1. Document Purpose
 
+Approved amendment (2026-10-05): [AUTHENTICATION_DECISIONS.md](AUTHENTICATION_DECISIONS.md) defines the current authentication requests, cookies, limits and atomic onboarding. Password recovery and invitation acceptance remain deferred.
+
 This document defines the API design for Make My Marriage V1. It describes the REST-style API conventions, authentication and authorization rules, endpoint groups, request and response formats, validation rules, rate limiting, S3 upload flow, scheduled reminder integration, and the expected behavior of the Next.js Route Handlers that form the backend of the V1 modular monolith.
 
 # 2. API Design Goals
@@ -142,7 +144,7 @@ OWNER, ADMIN, and FAMILY_MEMBER authenticate using email and password. Guests do
 
 | Method | Endpoint | Access | Purpose | Notes |
 | --- | --- | --- | --- | --- |
-| POST | /api/v1/auth/register | Public | Create user account | User may have no weddingId until onboarding completes |
+| POST | /api/v1/auth/register | Public | Create wedding and OWNER account atomically | Account + wedding details; creates initial 30-day session |
 | POST | /api/v1/auth/login | Public | Authenticate user | Creates secure auth/session cookie |
 | POST | /api/v1/auth/logout | Authenticated | End current session | Clears auth/session cookie |
 | GET | /api/v1/auth/me | Authenticated | Get current user | Returns user role, relationshipType, weddingId |
@@ -164,7 +166,7 @@ OWNER, ADMIN, and FAMILY_MEMBER authenticate using email and password. Guests do
 
 | Method | Endpoint | Access | Purpose | Notes |
 | --- | --- | --- | --- | --- |
-| POST | /api/v1/weddings | Authenticated | Create wedding workspace | Completes onboarding and links user as OWNER |
+| POST | /api/v1/weddings | Reserved | Separate workspace creation is deferred | Registration already creates the user's single wedding |
 | GET | /api/v1/weddings/current | Authenticated | Get current wedding | One wedding per user in V1 |
 | PUT | /api/v1/weddings/current | OWNER / ADMIN | Update wedding | Names, date, location, story, slug, cover image key |
 | DELETE | /api/v1/weddings/current | OWNER | Delete wedding | Controlled hard-delete cascade |

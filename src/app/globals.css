@@ -19,11 +19,11 @@
   --color-primary-hover: var(--primary-hover);
   --color-border: var(--border);
   --color-muted: var(--muted);
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: var(--font-manrope), Arial, Helvetica, sans-serif;
 }
 
 @layer base {
-  a:focus-visible, button:focus-visible, summary:focus-visible {
+  a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 4px;
   }
@@ -48,7 +48,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-page *, .landing-page *::before, .landing-page *::after {
+  .app-theme *, .app-theme *::before, .app-theme *::after {
     transition: none !important;
     animation: none !important;
   }

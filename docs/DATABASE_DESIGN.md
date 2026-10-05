@@ -17,6 +17,8 @@ Figure 1. MongoDB collection overview and key relationships for Make My Marriage
 
 # 1. Document Purpose
 
+Approved amendment (2026-10-05): [AUTHENTICATION_DECISIONS.md](AUTHENTICATION_DECISIONS.md) defines atomic wedding/OWNER registration and the exact sessions and rate_limits infrastructure schemas/indexes. The eight business collections below retain their fields.
+
 This document defines the database design for Make My Marriage V1. It explains the MongoDB collection structure, field design, relationships, indexes, enums, delete behavior, and the main data rules agreed for the first version of the product.
 
 # 2. Database Design Principles
@@ -25,7 +27,7 @@ This document defines the database design for Make My Marriage V1. It explains t
 
 - Keep the V1 schema simple and readable.
 
-- Use eight core collections only.
+- Use eight core business collections plus the approved sessions and rate_limits infrastructure collections.
 
 - Use MongoDB ObjectId for internal identifiers.
 
@@ -39,7 +41,7 @@ This document defines the database design for Make My Marriage V1. It explains t
 
 # 3. Database Overview
 
-V1 uses one MongoDB database with the following eight collections:
+V1 uses one MongoDB database with the following eight business collections, plus sessions and rate_limits as defined in the approved authentication amendment:
 
 - users
 
