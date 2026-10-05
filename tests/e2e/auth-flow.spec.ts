@@ -27,7 +27,7 @@ test("signup, saved wedding, persistence, logout and login work end to end", asy
   await page.getByRole("button", { name: "Create my wedding workspace" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "Sai Desktop & Priya Desktop" })).toBeVisible();
-  await expect(page.getByText("28 February 2027", { exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByText("28 February 2027", { exact: true })).toBeVisible();
   const cookie = (await context.cookies()).find(cookie => cookie.name === "mmm_session")!;
   expect(cookie.httpOnly).toBe(true);
   expect(cookie.sameSite).toBe("Lax");

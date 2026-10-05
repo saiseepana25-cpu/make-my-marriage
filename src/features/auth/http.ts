@@ -33,11 +33,10 @@ export async function limitAuthIp(request: Request, scope: "login" | "signup"): 
   return ip;
 }
 
-export async function readAuthJson(request: Request): Promise<Record<string, unknown>> {
+export async function readAuthJson(request: Request, maximum = 16 * 1024): Promise<Record<string, unknown>> {
   if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
     validationError("Content-Type must be application/json.");
   }
-  const maximum = 16 * 1024;
   const length = request.headers.get("content-length");
   if (length && (!/^\d+$/.test(length) || Number(length) > maximum)) {
     throw new AppError("VALIDATION_ERROR", "This form is too large.", 413);

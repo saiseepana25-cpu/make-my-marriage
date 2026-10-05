@@ -8,11 +8,11 @@ The product and technical specifications remain in [PRD.md](PRD.md), [SYSTEM_DES
 
 ## Current state
 
-The foundation scaffold, approved Stitch homepage, and authentication with wedding onboarding are implemented. The local preview uses `http://localhost:3000/`. Authentication has been verified with isolated MongoDB replica sets and manual browser signup, login, and logout against the configured Atlas database `make-my-marriage`.
+The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, and the first planning feature, Events management, are implemented. The local preview uses `http://localhost:3000/`. Authentication has been verified with isolated MongoDB replica sets and manual browser signup, login, and logout against the configured Atlas database `make-my-marriage`. Events has been verified against isolated replica sets and desktop/mobile browser flows, plus manual Atlas-backed creation, editing, persistence, and upcoming/past filtering in a separate QA wedding. No Atlas event records were deleted during validation.
 
-Signup creates an OWNER account and wedding together, then opens a protected welcome dashboard. Login and logout use persisted 30-day sessions. Dashboard planning feature pages and the public wedding route remain scaffolding or placeholders. Homepage product previews use illustrative sample data.
+Signup creates an OWNER account and wedding together, then opens a protected welcome dashboard. Login and logout use persisted 30-day sessions. Events now supports persisted creation, chronological upcoming/past lists, details, editing, and transactional deletion. Other planning modules, dashboard aggregates, and the public wedding route remain scaffolding or placeholders. Homepage product previews use illustrative sample data; Events never seeds those samples into a wedding.
 
-Wedding setup, dashboard couple headings, and newly generated slugs use groom-first name order. The latest recorded regression results are 46 unit tests across 11 files, 8 isolated integration tests, and 9 isolated browser tests, all passing. Typecheck, lint, build, and standard browser-test discovery passed during the implementation checks recorded below; they were not rerun for the later manual review or this documentation update. Production deployment remains unverified.
+Wedding setup, dashboard couple headings, workspace navigation, and newly generated slugs use groom-first name order. The latest regression results are 59 unit tests across 13 files, 15 isolated integration tests, and 11 isolated browser tests, all passing. Typecheck, lint, build, and standard browser-test discovery also passed during the Events milestone. Production deployment remains unverified.
 
 ## Milestone summary
 
@@ -24,7 +24,9 @@ Wedding setup, dashboard couple headings, and newly generated slugs use groom-fi
 | Auth browser server isolation | Startup race reproduced and fixed; regression and browser checks passed | 2026-10-05 |
 | Groom-first couple name order | Implemented; unit and desktop/mobile authentication checks passed | 2026-10-05 |
 | Manual Atlas authentication and navigation review | Completed locally; QA account retained and browser signed out | 2026-10-05 |
-| Functional wedding planning features | Pending | Next feature has not yet been selected |
+| Events management | Implemented; isolated regressions and manual Atlas create/edit/read flows passed | 2026-10-05 |
+| Manual review after Events code-review changes | Completed; no blocking issue found in checked flows, QA records retained, browser signed out | 2026-10-05 |
+| Other wedding planning features | Pending | Select the next feature and its designs after committing and pushing Events |
 
 ## Progress history
 
@@ -194,9 +196,72 @@ Checked this log against the current authentication/onboarding implementation, g
 
 This is a documentation-only update. Validation: `git diff --check` passed for this file. No application tests were rerun, no database records were changed, and no commit or push was performed during this update.
 
+### 2026-10-05 — Events management implemented from approved Stitch designs
+
+The user finalized the six Events screens in Stitch and their mobile counterparts: **Events — Overview**, **Empty State**, **Add Event**, **Edit Event**, **Details**, and **Delete Confirmation**, in project `9719362010133116550`. Built the agreed Events scope using those layouts, existing Manrope/Playfair fonts, burgundy colors, rounded cards, and responsive navigation.
+
+Implemented:
+
+- `/events`, `/events/new`, `/events/[eventId]`, and `/events/[eventId]/edit`, with loading, retry, unavailable-event, empty, inline validation, saving, and success states.
+- Chronological, paginated upcoming/past views with real counts. Events with an end time remain upcoming while in progress; events without an end time use their start for classification.
+- Required event name, date, start time, and venue; optional end time/date, address/landmarks, and description/notes. IST is explicit throughout the UI, with overnight events supported through existing `startAt`/`endAt` DateTime fields. Address and notes map to the documented `location` and `description` fields. No collection or schema field was added.
+- Authenticated `GET`/`POST /api/v1/events` and `GET`/`PUT`/`DELETE /api/v1/events/[eventId]`. Services derive wedding scope and authorship from the session and enforce centralized OWNER/ADMIN management and FAMILY_MEMBER read permissions. Optional documented API fields `status` and `livestreamUrl` are validated/preserved; unknown ownership/scope fields cannot alter access.
+- Same-origin mutation checks, bounded 32 KiB event JSON bodies, and a durable per-user limit of 60 event mutations per minute using the existing approved `rate_limits` collection. Authentication JSON limits remain 16 KiB.
+- Transactional updates validate the resulting start/end ordering. Transactional event deletion clears `eventId` on tasks/expenses/photos and `relatedEventId` on activities, preserving those records and their photo storage metadata. Failures roll back event deletion and earlier unlink writes.
+- Stitch-based shared desktop sidebar with active navigation and wedding/account context, plus a mobile menu supporting Escape and focus return. Forms preserve inputs on failed saves; the native modal delete dialog focuses Cancel, traps modal focus, and protects against duplicate submission.
+
+Validation:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm run lint` | Passed |
+| `npm run test -- --maxWorkers=2` | Passed: 59 tests across 13 files |
+| `npm run test:integration` | Passed: 15 tests across 2 files |
+| `npm run build` | Passed, including all new Events pages and API routes |
+| `npm run test:e2e:list` | Passed: 7 non-mutating smoke tests discovered |
+| `npm run test:e2e:auth` | Passed: 11 isolated browser tests, including Events desktop/mobile flows and existing auth/homepage regressions |
+| Desktop/mobile visual review | Reviewed all six implemented views in both sizes; screenshots in ignored `test-results/events-*.png` |
+| Responsive overflow | Event details passed at 320, 390, 768, 1024, and 1440 pixels; event form passed at 320, 390, and 768 pixels |
+| Local preview health | `http://localhost:3000/api/v1/health` returned 200 |
+
+Integration tests cover CRUD persistence, session-derived scope, forged IDs/ownership fields, role restrictions, chronological pagination, ongoing/past classification, partial update date validation, optional-field clearing, all four reference types, transaction rollback, origin checks, body bounds including Telugu text, and durable mutation limits. Browser tests cover create/edit/reload/delete/cancel, midnight timing persistence, past-event views, mobile validation, failed-save input retention and retry, menu Escape, modal Escape, and responsive layout.
+
+Validation recovery: an initial isolated development-server cache returned health-route 404s; a fresh test cache restored readiness. Browser selectors were scoped to main content after the sidebar repeated the wedding date and Next's route announcer added another alert. A run with concurrent compilation/test jobs exceeded unit and browser timeouts; the final browser suite ran without competing jobs, browser allowances now cover cold route compilation, and the final unit run limited workers to two. Final checks above are successful reruns, not claims that the earlier runs passed.
+
+Remaining scope: generated mockups also contained calendar sync, draft autosave/offline persistence, event/decoration images, guest-capacity information, notification/search widgets, and related-module data displays. These are outside the agreed Events increment or touch unresolved specifications and were not implemented. Livestream/status editing UI, system activity generation for event mutations, dashboard aggregates, and public event publishing remain deferred. Other navigation destinations remain placeholders. At this milestone's validation stage, Atlas event CRUD and deployed-production validation had not been completed. Subsequent manual Atlas creation, editing, and reading are recorded below; Atlas deletion and deployed-production validation remain unverified. No commit or push was performed for this milestone.
+
+### 2026-10-05 — Manual review after Events code-review changes
+
+At the user's request, tested the current working tree in the local browser with a separate **Review QA Tester** account and **Review Groom & Review Bride** wedding. Existing wedding/account data was not edited or deleted.
+
+Manual checks passed:
+
+- Anonymous Events access redirects to login; signup rejects missing required fields and short passwords, retains account/wedding inputs on back navigation, and opens the dashboard with the saved wedding. Refresh preserves the session.
+- A fresh wedding shows the Events empty state. Quick ceremony names populate the form; required-field errors appear and invalid end-before-start timing is rejected.
+- Created **QA Review — Sangeet** for 28 February 2027, 8:00 pm through 1 March, 1:00 am IST. Details correctly displayed the overnight end date, venue, address, and Telugu notes, and persisted after reload.
+- Editing prepopulates saved overnight values. An end date without an end time is rejected. Renamed the event to **QA Review — Sangeet & Dinner**, updated its venue, and cleared the optional end/address/notes fields; the resulting detail page persisted those changes after reload.
+- Delete confirmation initially focuses Cancel. Cancel and Escape close the dialog and retain the event. Permanent deletion was verified only by the isolated regression suites.
+- At 320 pixels, event details and the add form have no horizontal overflow. The mobile workspace menu opens, closes with Escape, and restores focus to its trigger.
+- Created **QA Review — Past Ceremony** on 27 February 2020. Its details identify it as a past event, the view counts show one upcoming and one past event, and the past view displays only that past ceremony.
+- Opening login while authenticated redirects to the dashboard. Logout blocks subsequent direct Events access. Incorrect credentials show the generic error; valid login with uppercase email succeeds, and the saved event and counts remain available after that fresh login.
+- No console warning/error entries were returned during the reviewed flows.
+
+Fresh automated validation also passed: **59 unit/component tests across 13 files**, **15 integration tests across 2 files**, and **11 isolated browser tests**. These cover event deletion, reference preservation/rollback, role and wedding isolation, retry after failed saves, chronology, authentication expiration/revocation, and homepage regressions.
+
+No blocking issue was found in the checked implemented flows. The separate QA account/wedding and two QA events remain in Atlas; the browser was signed out after testing. Screenshot evidence is saved outside the repository. Application code was not changed; typecheck, lint, and build were not rerun for this testing/documentation-only review.
+
+Limitations: this validates the local development app, not a deployed production environment. Final deletion, failure injection, permissions for other roles, and transaction rollback were exercised in isolated tests rather than by modifying Atlas records. Other planning modules, public guest functionality, uploads, email, and reminders retain the implementation limits recorded above.
+
+### 2026-10-05 — Events status checked before commit and push
+
+Reconciled the current-state summary, milestone table, and next handoff with the completed manual review and latest regression results. Clarified that the earlier Atlas CRUD limitation was superseded for creation, editing, and reading, while Atlas deletion and production deployment remain unverified. Recorded successful fresh-login persistence and the final signed-out browser state. Preserved the dated implementation history and remaining feature limits.
+
+This check changed only this status file. Validation: `git diff --check -- docs/PROJECT_STATUS.md` passed. No application tests were rerun and no commit or push was performed during this documentation check.
+
 ## Next handoff
 
-Manual signup, login, logout, and welcome dashboard review against the configured Atlas database is complete. The current changes remain uncommitted. The next step is to commit and push the approved work, then agree the next planning feature with the user, continuing development in small increments. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before implementing features that touch unresolved specifications, email, uploads, or reminders.
+Manual review of authentication and Events against the local application is complete, with no blocking issue found in the checked flows. The user has authorized committing and pushing the validated Events changes and this status update. After repository synchronization, agree the next feature and its designs before implementation. Task management is a possible next increment, not approved implementation scope yet. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before implementing features that touch unresolved specifications, email, uploads, or reminders.
 
 ## How to maintain this file
 
