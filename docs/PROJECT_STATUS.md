@@ -1,6 +1,6 @@
 # Make My Marriage — Project Status
 
-Last updated: **2026-10-05**
+Last updated: **2026-10-06**
 
 This is the living implementation log for Make My Marriage. Read it before starting development and update it after each major feature or substantial feature change. It records what exists, what was verified, and what remains to be built.
 
@@ -8,11 +8,11 @@ The product and technical specifications remain in [PRD.md](PRD.md), [SYSTEM_DES
 
 ## Current state
 
-The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, and the first planning feature, Events management, are implemented. The local preview uses `http://localhost:3000/`. Authentication has been verified with isolated MongoDB replica sets and manual browser signup, login, and logout against the configured Atlas database `make-my-marriage`. Events has been verified against isolated replica sets and desktop/mobile browser flows, plus manual Atlas-backed creation, editing, persistence, and upcoming/past filtering in a separate QA wedding. No Atlas event records were deleted during validation.
+The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events management, and the shared Tasks checklist are implemented. The user reported completing Tasks code review and changes; subsequent manual Atlas-backed testing and fresh isolated regression suites passed, with no blocking issue found in the checked flows. The local preview uses `http://localhost:3000/`. Authentication has been verified with isolated MongoDB replica sets and manual browser signup, login, and logout against the configured Atlas database `make-my-marriage`. Events and Tasks have been verified with isolated regressions and separate manual QA weddings. No Atlas event or task records were deleted during validation.
 
-Signup creates an OWNER account and wedding together, then opens a protected welcome dashboard. Login and logout use persisted 30-day sessions. Events now supports persisted creation, chronological upcoming/past lists, details, editing, and transactional deletion. Other planning modules, dashboard aggregates, and the public wedding route remain scaffolding or placeholders. Homepage product previews use illustrative sample data; Events never seeds those samples into a wedding.
+Signup creates an OWNER account and wedding together, then opens a protected welcome dashboard. Login and logout use persisted 30-day sessions. Events supports persisted creation, chronological upcoming/past lists, details, editing, and transactional deletion. Tasks supports the shared checklist, progress, filters, creation, details, editing, status changes, and confirmed deletion. Other planning modules, dashboard aggregates, and the public wedding route remain scaffolding or placeholders. Homepage product previews use illustrative sample data; Events and Tasks never seed those samples into a wedding.
 
-Wedding setup, dashboard couple headings, workspace navigation, and newly generated slugs use groom-first name order. The latest regression results are 59 unit tests across 13 files, 15 isolated integration tests, and 11 isolated browser tests, all passing. Typecheck, lint, build, and standard browser-test discovery also passed during the Events milestone. Production deployment remains unverified.
+Wedding setup, dashboard couple headings, workspace navigation, and newly generated slugs use groom-first name order. Fresh post-review validation passed 66 unit/component tests, 21 integration tests, and 14 isolated browser tests. Typecheck, lint, build, and standard browser discovery passed during implementation; they were not rerun for this testing/documentation-only review. Details and earlier failed attempts are recorded below. Production deployment remains unverified.
 
 ## Milestone summary
 
@@ -26,7 +26,9 @@ Wedding setup, dashboard couple headings, workspace navigation, and newly genera
 | Manual Atlas authentication and navigation review | Completed locally; QA account retained and browser signed out | 2026-10-05 |
 | Events management | Implemented; isolated regressions and manual Atlas create/edit/read flows passed | 2026-10-05 |
 | Manual review after Events code-review changes | Completed; no blocking issue found in checked flows, QA records retained, browser signed out | 2026-10-05 |
-| Other wedding planning features | Pending | Select the next feature and its designs after committing and pushing Events |
+| Tasks management | Implemented; user-reported code review complete; isolated regressions and manual Atlas-backed review passed | 2026-10-06 |
+| Manual review after Tasks code-review changes | Completed; no blocking issue found in checked flows, QA records retained, browser signed out | 2026-10-06 |
+| Other wedding planning features | Pending | Agree the next feature after the authorized Tasks commit/push |
 
 ## Progress history
 
@@ -259,9 +261,84 @@ Reconciled the current-state summary, milestone table, and next handoff with the
 
 This check changed only this status file. Validation: `git diff --check -- docs/PROJECT_STATUS.md` passed. No application tests were rerun and no commit or push was performed during this documentation check.
 
+### 2026-10-05 — Shared Tasks checklist implementation
+
+The user confirmed Events was committed/pushed and approved implementation after finalizing the Tasks designs in Stitch. Implemented the approved shared checklist increment from the twelve desktop/mobile Overview, Empty, Add, Edit, Details, and Delete designs in Stitch project `9719362010133116550`. The agreed workflow remains design approval → implementation → code review → manual testing → commit/push.
+
+Implemented:
+
+- Protected `/tasks`, `/tasks/new`, `/tasks/[taskId]`, and `/tasks/[taskId]/edit`, with the existing wedding shell, fonts, colors, and groom-first couple name.
+- Global completion progress and counts; status views; literal title search; event, priority, and overdue filters; stable newest-first pagination; empty and no-results states. Quick-start ideas only prefill an Add form.
+- Required title (120-character maximum), one optional description/notes field (5000 maximum), optional existing event or Wedding-wide, optional paired deadline date/time in IST, LOW/MEDIUM/HIGH priority, and TODO/IN_PROGRESS/COMPLETED status. Past deadlines are accepted. Overdue is derived for unfinished tasks, not persisted as a status or field. No deadline is explicit.
+- Persisted create/read/edit/hard delete and status-only API routes under `/api/v1/tasks`. Updates preserve omitted fields and clear optional values explicitly. Details show the linked event's saved date/time and venue. Tasks can be marked complete directly from the checklist.
+- Services enforce session-derived wedding scope and existing centralized roles. OWNER/ADMIN manage tasks; FAMILY_MEMBER can read and only update an already assigned task's status. Individual assignment UI/API mutations and My Tasks are deferred for this approved increment; the documented schema and role policies are preserved.
+- Same-origin mutation checks, bounded JSON bodies, allowlisted DTOs, strict input/filter validation, and durable shared task mutation limits (60 per minute per user) using the existing infrastructure counter collection.
+- Transactional event-reference validation with a write to the existing event's `updatedAt`, so concurrent task linking and event deletion cannot commit a dangling reference. Event deletion still retains linked tasks and clears their event link.
+- Loading, not-found, retryable read failures, input-preserving save failures, mutation feedback, and accessible delete confirmation with Cancel focus, Escape, and focus return.
+
+Validation:
+
+| Check | Result |
+| --- | --- |
+| Typecheck | Passed |
+| Lint | Passed |
+| Unit/component tests | Passed: full suite of 65 tests across 15 files with one worker; final focused Tasks rerun of 7 tests across 2 files passed after adding the duplicate-submission guard regression |
+| Isolated integration tests | Passed: 21 tests across 3 files; focused Tasks rerun passed all 6 after deadline-filter coverage was extended |
+| Isolated browser regressions | Passed: full suite of 14 tests; final focused Tasks rerun passed all 3 after UI polish and test-cache recovery |
+| Production build | Passed, including all Tasks pages and API routes |
+| Standard browser discovery | Passed: 7 non-mutating smoke tests discovered; mutating Tasks tests require the isolated auth test configuration |
+| Desktop/mobile screenshot review | Reviewed all six views in both sizes; final corrected captures in ignored `test-results/tasks-*.png` |
+| Responsive overflow | Add, edit, details, and overview passed at 320, 390, 768, 1024, and 1440 pixels |
+| Local preview health | `http://localhost:3000/api/v1/health` returned 200 after the build |
+
+Validation recovery: the first unit run had two worker startup timeouts; the one-worker rerun passed. The first full browser run passed 11 tests but failed two cold-route navigation waits and one fixture signup that reached the shared local-IP signup limit. Browser test allowances now accommodate cold compilation; Task fixtures reset only disposable isolated database counters before each test. Application rate limits are unchanged. These earlier failed runs are not reported as passes.
+
+The final screenshot review improved mobile status choices to remain on one row, made deadline fields visually distinct, enlarged checklist completion targets, and corrected mobile overview captures to wait for the checklist heading. Save remains locked after successful persistence while navigation loads, preventing duplicate creates; its new focused regression passed. A focused unit run again hit a restricted-worker startup timeout and was rerun successfully outside the sandbox. A focused browser recheck reproduced a stale generated test-cache response: Next returned HTML 404 for the status endpoint despite the route existing and passing the full suite. That affected run was stopped, only the generated `.next-auth-e2e` cache was cleared, and the final fresh-cache Tasks run passed all three flows. No application authorization or rate limit was weakened.
+
+Integration coverage includes persistence/defaults, optional-field clearing, forged scope/authorship, cross-wedding CRUD/status/event-reference isolation, role enforcement and status-only updates, existing-assignment preservation, literal title search, combined filters/deadline ranges/pagination/global counts, event-deletion retention and concurrent linking, origin/body bounds, Telugu descriptions, and durable 429 limits. Browser coverage includes desktop creation/edit/reload/status/delete/cancel, UTC persistence of IST inputs, mobile validation and failed save/status/delete retry paths, menu/modal Escape and focus return, quick-start behavior without seeding, filtering/no results, checklist completion, event deletion becoming Wedding-wide, not-found pages, and responsive widths.
+
+Remaining scope: separate family accounts/assignment, categories, subtasks, comments, attachments, separate notes, calendar sync, autosave, generated activities, dashboard task aggregates, notifications, email, and reminders are not enabled. No new database fields, indexes, collections, or dependencies were added. At this implementation milestone, Tasks manual Atlas-backed review and production deployment were unverified. Subsequent manual review is recorded below; production deployment remains unverified. No commit or push was performed for Tasks.
+
+### 2026-10-06 — Manual review after Tasks code-review changes
+
+At the user's request, tested the current working tree after their reported code review and changes. Manual browser testing used a separate **Tasks Manual QA** account and **Tasks QA Groom & Tasks QA Bride** wedding against the configured Atlas database. Existing wedding/account records were not edited or deleted.
+
+Manual checks passed:
+
+- Anonymous Tasks access redirects to login. Signup rejects a seven-character password, creates the QA account/wedding, and opens the saved wedding dashboard. Refresh retains the session.
+- A fresh wedding shows the checklist empty state. The photographer quick-start suggestion prefills the Add form; Cancel returns to an empty checklist without creating a sample task.
+- Created **QA Tasks — Haldi** through the Events form, then created an event-linked high-priority task with Telugu notes and a past leap-day deadline of **29 February 2020, 12:15 am IST**. Details display the correct event, date/time, venue, description, priority, and overdue state; reload preserves them.
+- Missing task title and a deadline date without its time show validation errors. A second task accepts the default To do status, Low priority, Wedding-wide scope, and no deadline or description.
+- Details status changes persist through In progress and Completed. Completing the past-deadline task removes its overdue count; reopening it restores overdue. Checklist completion also works on mobile. Two tasks show correct newest-first ordering and 50% overall completion when one is complete.
+- Combined literal bracket-title search, event, and priority filters return only the matching task while retaining wedding-global progress. No-result searches show the recovery state, Clear filters restores both tasks, and the overdue view shows only the unfinished past-deadline task.
+- Editing prepopulates saved fields. Renamed the first task to **QA Photographer confirmed**, changed its priority to Medium, cleared its deadline/description, and changed its event to Wedding-wide. The saved details and cleared values persist after reload.
+- Delete confirmation initially focuses Cancel. Cancel and Escape retain the task and return focus to Delete task. Permanent deletion was verified by isolated regressions rather than deleting Atlas records.
+- Details, delete confirmation, and checklist fit a 320-pixel viewport without horizontal overflow. Mobile workspace navigation opens, closes with Escape, and restores focus to its trigger. Desktop and mobile screenshots were reviewed and saved outside the repository.
+- Logout blocks subsequent direct Tasks access. Incorrect credentials show the generic login error. Valid login with uppercase email succeeds and restores both tasks, the edited values, and 50% progress. No console warning/error entries were returned in the reviewed flows.
+
+Fresh automated validation passed:
+
+| Check | Result |
+| --- | --- |
+| `npm run test -- --maxWorkers=1` | 66 unit/component tests across 15 files passed |
+| `npm run test:integration` | 21 isolated integration tests across 3 files passed |
+| `npm run test:e2e:auth` | 14 isolated browser tests passed, covering Tasks, Events, authentication, and homepage regressions |
+
+The isolated suites also exercise permanent deletion, failed save/status/delete retries, role and wedding isolation, event deletion retaining tasks, concurrent event linking, transaction rollback, and wider responsive sizes. No blocking issue was found in the checked implemented flows. Application code was not changed during this review; typecheck, lint, build, and browser discovery were not rerun. Documentation validation: `git diff --check -- docs/PROJECT_STATUS.md` passed.
+
+The separate QA account/wedding, one QA event, and two QA tasks remain in Atlas. Final task state: **QA Photographer confirmed** is To do, Medium priority, Wedding-wide with no deadline/description; **QA Arrange outfits** is Completed, Low priority, Wedding-wide with no deadline/description. The browser was signed out after testing and its temporary viewport override was reset. No Tasks commit or push was performed.
+
+Limitations: this validates the local development app, not a deployed production environment. Final deletion, failure injection, other-role permissions, and transaction rollback were exercised in isolated tests. Other planning modules, public guest functionality, uploads, email, reminders, and the deferred Tasks scope retain the limits recorded above.
+
+### 2026-10-06 — Tasks status checked before commit and push
+
+Checked the current-state summary, milestone table, and latest progress entry against the completed manual review and fresh regression results. The file already records the implemented Tasks scope, 66 passing unit/component tests, 21 passing integration tests, 14 passing isolated browser tests, retained QA records, signed-out browser state, and remaining limits. Preserved the dated history and clarified the next handoff after the user's authorization to commit and push the Tasks changes on `dev`.
+
+No application code was changed and no application tests were rerun for this status check. Documentation and commit-content validation: `git diff --check` passed. The commit/push result is recorded in Git history and the task handoff rather than claimed before it occurs.
+
 ## Next handoff
 
-Manual review of authentication and Events against the local application is complete, with no blocking issue found in the checked flows. The user has authorized committing and pushing the validated Events changes and this status update. After repository synchronization, agree the next feature and its designs before implementation. Task management is a possible next increment, not approved implementation scope yet. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before implementing features that touch unresolved specifications, email, uploads, or reminders.
+Tasks implementation, user-reported code review, manual Atlas-backed testing, and fresh isolated regressions are complete for the approved increment. The user authorized committing and pushing the reviewed Tasks changes on `dev`. Next: agree the next feature and its designs with the user; no next-feature implementation has begun. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before implementing features that touch unresolved specifications, email, uploads, or reminders.
 
 ## How to maintain this file
 

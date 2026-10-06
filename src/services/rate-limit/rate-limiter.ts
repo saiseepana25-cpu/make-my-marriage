@@ -5,7 +5,7 @@ import { requiredServerEnv } from "@/config/server-env";
 import { RateLimitModel } from "@/models/rate-limit";
 import { ensureAuthIndexes } from "@/features/auth/indexes";
 
-export type RateLimitScope = "login" | "signup" | "forgot-password" | "rsvp" | "photo-presign" | "email" | "events";
+export type RateLimitScope = "login" | "signup" | "forgot-password" | "rsvp" | "photo-presign" | "email" | "events" | "tasks";
 export interface RateLimitRequest {
   scope: RateLimitScope;
   // Adapter should hash identifiers before persistence; never store credentials.

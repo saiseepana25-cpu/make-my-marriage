@@ -1,0 +1,104 @@
+import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import mongoose from "mongoose";
+import { MongoMemoryReplSet } from "mongodb-memory-server-core";
+import { registerOwner } from "@/features/auth/service";
+import { ensureAuthIndexes } from "@/features/auth/indexes";
+import { createTask, deleteTask, getTask, listTasks, updateTask, updateTaskStatus, taskEventOptions } from "@/features/tasks/service";
+import { createEvent, deleteEvent } from "@/features/events/service";
+import { UserModel } from "@/models/user";
+import { EventModel } from "@/models/event";
+import { TaskModel } from "@/models/task";
+import { POST, GET } from "@/app/api/v1/tasks/route";
+import { PUT, DELETE } from "@/app/api/v1/tasks/[taskId]/route";
+import { PATCH } from "@/app/api/v1/tasks/[taskId]/status/route";
+const context = vi.hoisted(() => ({ cookie: null as string | null }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers(context.cookie ? { cookie: context.cookie } : {}) }));
+let mongo: MongoMemoryReplSet, owner: Awaited<ReturnType<typeof registerOwner>>;
+const registration = { name: "Sai", email: "sai@example.com", password: "12345678", relationshipType: "GROOM", wedding: { groomName: "Sai", brideName: "Adya", weddingDate: "2027-02-28", location: "Hyderabad" } };
+const eventDetails = { name: "Haldi", venue: "Family hall", startAt: "2027-02-28T10:00:00+05:30" };
+const routeContext = (taskId: string) => ({ params: Promise.resolve({ taskId }) });
+const request = (method: string, body?: unknown, origin = "http://localhost:3000") => new Request("http://localhost:3000/api/v1/tasks", { method, headers: { origin, "content-type": "application/json" }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+beforeAll(async () => {
+  mongo = await MongoMemoryReplSet.create({ replSet: { count: 1, storageEngine: "wiredTiger" } });
+  vi.stubEnv("MONGODB_URI", mongo.getUri("mmm-test-tasks")); vi.stubEnv("MONGODB_DB_NAME", "mmm-test-tasks");
+  vi.stubEnv("AUTH_RATE_LIMIT_SECRET", "test-only-".repeat(8)); vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000"); vi.stubEnv("NODE_ENV", "development");
+  await ensureAuthIndexes();
+});
+beforeEach(async () => {
+  vi.restoreAllMocks(); context.cookie = null;
+  if (mongoose.connection.name !== "mmm-test-tasks") throw new Error("Unexpected integration database.");
+  for (const collection of Object.values(mongoose.connection.collections)) await collection.deleteMany({});
+  owner = await registerOwner(registration, null); context.cookie = `mmm_session=${owner.session.token}`;
+});
+afterAll(async () => { await mongoose.disconnect(); await mongo?.stop(); vi.unstubAllEnvs(); });
+
+test("CRUD persists approved fields, derives scope, clears optionals and preserves linked event", async () => {
+  const event = await createEvent(eventDetails);
+  const task = await createTask({ title: " Book venue ", description: " Details ", eventId: event.id, dueAt: "2020-02-29T00:15:00+05:30", weddingId: "forged", createdBy: "forged", category: "fake" });
+  expect(task).toMatchObject({ title: "Book venue", description: "Details", priority: "MEDIUM", status: "TODO", weddingId: owner.user.weddingId, createdBy: owner.user.id, dueAt: "2020-02-28T18:45:00.000Z" });
+  expect(await getTask(task.id)).toEqual(task);
+  const stored = await TaskModel.findById(task.id).lean(); expect(stored).not.toHaveProperty("category"); expect(stored).not.toHaveProperty("overdue");
+  await expect(updateTask(task.id, { status: "OVERDUE" })).rejects.toMatchObject({ status: 400 });
+  const updated = await updateTask(task.id, { title: "Venue ready", description: "", dueAt: null, eventId: null, priority: "HIGH" });
+  expect(updated).toMatchObject({ title: "Venue ready", priority: "HIGH" }); expect(updated.description).toBeUndefined(); expect(updated.dueAt).toBeUndefined(); expect(updated.eventId).toBeUndefined();
+  await deleteTask(task.id); await expect(getTask(task.id)).rejects.toMatchObject({ status: 404 }); expect(await EventModel.countDocuments()).toBe(1);
+});
+test("filters, literal search, pagination and global counts combine correctly", async () => {
+  const event = await createEvent(eventDetails);
+  await createTask({ title: "Book [venue]", eventId: event.id, priority: "HIGH", dueAt: "2020-01-01T00:00:00Z" });
+  await createTask({ title: "Venue done", status: "COMPLETED", dueAt: "2020-01-01T00:00:00Z" });
+  await createTask({ title: "Outfits", status: "IN_PROGRESS" });
+  const list = await listTasks(new URLSearchParams("limit=1&page=2")); expect(list.tasks).toHaveLength(1); expect(list.pagination).toMatchObject({ total: 3, pages: 3 });
+  expect(list.counts).toEqual({ total: 3, TODO: 1, IN_PROGRESS: 1, COMPLETED: 1, overdue: 1 });
+  expect((await listTasks(new URLSearchParams(`eventId=${event.id}&priority=HIGH&status=TODO&overdue=true`))).tasks[0].title).toBe("Book [venue]");
+  expect((await listTasks(new URLSearchParams("search=%5Bvenue%5D"))).tasks).toHaveLength(1);
+  expect((await listTasks(new URLSearchParams("eventId=wedding-wide"))).tasks).toHaveLength(2);
+  expect((await listTasks(new URLSearchParams("status=COMPLETED&overdue=true"))).tasks).toHaveLength(0);
+  expect((await listTasks(new URLSearchParams("dueFrom=2020-01-01T00%3A00%3A00Z&dueTo=2020-01-01T00%3A00%3A00Z"))).tasks).toHaveLength(2);
+  expect((await listTasks(new URLSearchParams("dueFrom=2030-01-01T00%3A00%3A00Z"))).tasks).toHaveLength(0);
+  for (const query of ["status=OVERDUE", "priority=urgent", "eventId=bad", "overdue=yes", "limit=101", "page=0", "assignedTo=bad", "dueFrom=bad", "dueFrom=2030-01-01T00%3A00%3A00Z&dueTo=2020-01-01T00%3A00%3A00Z"]) await expect(listTasks(new URLSearchParams(query))).rejects.toMatchObject({ status: 400 });
+});
+test("cross-wedding access and event references are rejected without changing records", async () => {
+  const event = await createEvent(eventDetails), task = await createTask({ title: "Private task" });
+  const other = await registerOwner({ ...registration, email: "other@example.com" }, null); context.cookie = `mmm_session=${other.session.token}`;
+  expect((await listTasks()).tasks).toHaveLength(0); expect(await taskEventOptions()).toHaveLength(0);
+  await expect(getTask(task.id)).rejects.toMatchObject({ status: 404 }); await expect(updateTask(task.id, { title: "Forged" })).rejects.toMatchObject({ status: 404 });
+  await expect(deleteTask(task.id)).rejects.toMatchObject({ status: 404 }); await expect(updateTaskStatus(task.id, { status: "COMPLETED" })).rejects.toMatchObject({ status: 404 });
+  await expect(createTask({ title: "Bad link", eventId: event.id })).rejects.toMatchObject({ status: 400 });
+  const local = await createTask({ title: "Local" }); await expect(updateTask(local.id, { eventId: event.id })).rejects.toMatchObject({ status: 400 });
+  expect((await getTask(local.id)).eventId).toBeUndefined(); expect(await TaskModel.countDocuments()).toBe(2);
+});
+test("family can only update an assigned status; owners and admins can manage", async () => {
+  const task = await createTask({ title: "Family checklist" });
+  await UserModel.updateOne({ _id: owner.user.id }, { role: "FAMILY_MEMBER" });
+  expect((await getTask(task.id)).title).toBe("Family checklist");
+  for (const action of [() => createTask({ title: "Denied" }), () => updateTask(task.id, { title: "Denied" }), () => deleteTask(task.id), () => updateTaskStatus(task.id, { status: "COMPLETED" })]) await expect(action()).rejects.toMatchObject({ status: 403 });
+  await TaskModel.updateOne({ _id: task.id }, { assignedTo: owner.user.id });
+  expect((await updateTaskStatus(task.id, { status: "IN_PROGRESS" })).status).toBe("IN_PROGRESS");
+  await expect(updateTaskStatus(task.id, { status: "COMPLETED", title: "forged" })).rejects.toMatchObject({ status: 400 });
+  await UserModel.updateOne({ _id: owner.user.id }, { role: "ADMIN" });
+  expect((await updateTask(task.id, { title: "Admin edit" })).assignedTo).toBe(owner.user.id);
+  await deleteTask(task.id);
+});
+test("event deletion retains tasks wedding-wide, including concurrent task linking", async () => {
+  const event = await createEvent(eventDetails); const first = await createTask({ title: "Keep task", eventId: event.id });
+  const outcomes = await Promise.allSettled([createTask({ title: "Concurrent task", eventId: event.id }), deleteEvent(event.id)]);
+  expect(outcomes[1].status).toBe("fulfilled");
+  if (outcomes[0].status === "rejected") expect(outcomes[0].reason).toMatchObject({ status: 400 });
+  expect((await getTask(first.id)).eventId).toBeUndefined(); expect(await TaskModel.countDocuments({ eventId: event.id })).toBe(0);
+  await expect(createTask({ title: "Missing event", eventId: event.id })).rejects.toMatchObject({ status: 400 });
+});
+test("HTTP status, origin, body limits, authentication and durable mutation limits", async () => {
+  expect((await POST(request("POST", { title: "x" }, "https://evil.example"))).status).toBe(403);
+  const response = await POST(request("POST", { title: "Venue" })); expect(response.status).toBe(201); const { data } = await response.json();
+  expect((await PUT(request("PUT", { title: "Updated" }), routeContext(data.id))).status).toBe(200);
+  expect((await PATCH(request("PATCH", { status: "COMPLETED" }), routeContext(data.id))).status).toBe(200);
+  expect((await DELETE(request("DELETE"), routeContext("bad"))).status).toBe(400);
+  expect((await DELETE(request("DELETE"), routeContext(data.id))).status).toBe(204);
+  expect((await POST(request("POST", { title: "తెలుగు", description: "శ".repeat(5000) }))).status).toBe(201);
+  expect((await POST(request("POST", { title: "Large", description: "x".repeat(33000) }))).status).toBe(413);
+  context.cookie = null; expect((await GET(request("GET"))).status).toBe(401); context.cookie = `mmm_session=${owner.session.token}`;
+  await mongoose.connection.collection("rate_limits").deleteMany({}); vi.spyOn(Date, "now").mockReturnValue(Date.now());
+  for (let index = 0; index < 60; index++) await createTask({ title: "Rate limit" });
+  const limited = await POST(request("POST", { title: "Blocked" })); expect(limited.status).toBe(429); expect(Number(limited.headers.get("retry-after"))).toBeGreaterThan(0);
+});

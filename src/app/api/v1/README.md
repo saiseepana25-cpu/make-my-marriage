@@ -8,8 +8,11 @@ Implemented routes:
 - POST /api/v1/auth/login: verifies credentials and replaces this browser's session.
 - POST /api/v1/auth/logout: revokes the current session and expires the cookie.
 - GET /api/v1/weddings/current: returns the server-resolved user's wedding details.
+- GET/POST /api/v1/events and GET/PUT/DELETE /api/v1/events/{eventId}: private event management.
+- GET/POST /api/v1/tasks and GET/PUT/DELETE /api/v1/tasks/{taskId}: shared wedding checklist.
+- PATCH /api/v1/tasks/{taskId}/status: status-only change with owner/admin or existing assignee authorization.
 
-Future groups: auth, members, weddings/current, dashboard, budget, events, tasks,
+Future groups: remaining auth, members, wedding settings, dashboard, budget,
 activities, guests, expenses, photos/presign and photos/complete,
 public/weddings/[slug] (including RSVP and guest photo uploads), internal/cron/reminders.
 
