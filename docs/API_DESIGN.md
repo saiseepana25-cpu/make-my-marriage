@@ -174,6 +174,8 @@ OWNER, ADMIN, and FAMILY_MEMBER authenticate using email and password. Guests do
 | GET | /api/v1/budget | Authenticated | Get total budget and summary | FAMILY_MEMBER can view |
 | PUT | /api/v1/budget | OWNER / ADMIN | Update total budget | Stored on wedding document |
 
+Dashboard implementation milestone (2026-10-07): the approved overview currently returns real Tasks and Events summaries; RSVP, budget, activities and photos remain future modules. `GET /api/v1/dashboard` returns independent `tasks` and `events` sections with `{ status: "ready", data }` or `{ status: "error", data: null }`. Optional `?section=tasks` or `?section=events` loads/retries one section through the standard response envelope and HTTP error handling. Authentication is required in both forms; wedding scope always comes from the session. Task counts cover the full wedding, while attention shows the earliest three unfinished tasks overdue or due within seven rolling days. Upcoming Events includes ongoing events and previews the next five chronologically. See [dashboard implementation notes](../src/features/dashboard/README.md).
+
 # 9. Event APIs
 
 | Method | Endpoint | Access | Purpose | Notes |

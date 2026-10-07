@@ -1,6 +1,6 @@
 # Make My Marriage — Project Status
 
-Last updated: **2026-10-06**
+Last updated: **2026-10-07**
 
 This is the living implementation log for Make My Marriage. Read it before starting development and update it after each major feature or substantial feature change. It records what exists, what was verified, and what remains to be built.
 
@@ -8,11 +8,11 @@ The product and technical specifications remain in [PRD.md](PRD.md), [SYSTEM_DES
 
 ## Current state
 
-The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events management, and the shared Tasks checklist are implemented. The user reported completing Tasks code review and changes; subsequent manual Atlas-backed testing and fresh isolated regression suites passed, with no blocking issue found in the checked flows. The local preview uses `http://localhost:3000/`. Authentication has been verified with isolated MongoDB replica sets and manual browser signup, login, and logout against the configured Atlas database `make-my-marriage`. Events and Tasks have been verified with isolated regressions and separate manual QA weddings. No Atlas event or task records were deleted during validation.
+The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events management, shared Tasks checklist, and approved Dashboard overview are implemented. The dashboard connects saved wedding details, task aggregates and upcoming events; unfinished modules show Coming soon. The user reports that the previous app changes were committed, pushed and deployed to Vercel. After the user's reported dashboard code review, manual Atlas-backed desktop/mobile testing and fresh isolated regressions passed with no blocking issue found in the checked flows. This dashboard increment is reviewed and tested; the user authorized committing and pushing it on dev. Deployment remains unverified. The local preview uses `http://localhost:3000/`. Authentication, Events and Tasks have earlier isolated regressions and manual Atlas-backed reviews. Dashboard testing used disposable isolated databases and a new, separate Atlas QA wedding; earlier wedding/account records were not changed.
 
-Signup creates an OWNER account and wedding together, then opens a protected welcome dashboard. Login and logout use persisted 30-day sessions. Events supports persisted creation, chronological upcoming/past lists, details, editing, and transactional deletion. Tasks supports the shared checklist, progress, filters, creation, details, editing, status changes, and confirmed deletion. Other planning modules, dashboard aggregates, and the public wedding route remain scaffolding or placeholders. Homepage product previews use illustrative sample data; Events and Tasks never seed those samples into a wedding.
+Signup creates an OWNER account and wedding together, then opens the protected dashboard. Login and logout use persisted 30-day sessions. Events supports persisted creation, chronological upcoming/past lists, details, editing, and transactional deletion. Tasks supports the shared checklist, progress, filters, creation, details, editing, status changes, and confirmed deletion. Dashboard provides the saved couple/date/location, India-calendar countdown, real task counts/progress, deadline attention checklist with completion, and chronological upcoming/ongoing events. Tasks and Events load and retry independently. Budget, guests/RSVP, gallery, activities and wedding website dashboard cards display Coming soon; other planning modules and public wedding functionality remain scaffolding/placeholders. Homepage product previews use illustrative sample data; no dashboard, Events or Tasks samples are seeded into a wedding.
 
-Wedding setup, dashboard couple headings, workspace navigation, and newly generated slugs use groom-first name order. Fresh post-review validation passed 66 unit/component tests, 21 integration tests, and 14 isolated browser tests. Typecheck, lint, build, and standard browser discovery passed during implementation; they were not rerun for this testing/documentation-only review. Details and earlier failed attempts are recorded below. Production deployment remains unverified.
+Wedding setup, dashboard couple headings/monogram, workspace navigation, and newly generated slugs use groom-first name order. Fresh dashboard post-review validation passed 68 unit/component tests, 26 isolated integration tests, and all 18 isolated browser tests. Typecheck, lint, build and browser discovery passed during implementation; they were not rerun for this testing/documentation-only review. Earlier runs and corrections are recorded below. The user-reported existing production deployment has not been independently revalidated during dashboard testing; deployment of the dashboard increment has not been verified.
 
 ## Milestone summary
 
@@ -28,7 +28,9 @@ Wedding setup, dashboard couple headings, workspace navigation, and newly genera
 | Manual review after Events code-review changes | Completed; no blocking issue found in checked flows, QA records retained, browser signed out | 2026-10-05 |
 | Tasks management | Implemented; user-reported code review complete; isolated regressions and manual Atlas-backed review passed | 2026-10-06 |
 | Manual review after Tasks code-review changes | Completed; no blocking issue found in checked flows, QA records retained, browser signed out | 2026-10-06 |
-| Other wedding planning features | Pending | Agree the next feature after the authorized Tasks commit/push |
+| Dashboard overview | Implemented; user-reported code review complete; fresh isolated regressions and manual Atlas-backed desktop/mobile checks passed | 2026-10-07 |
+| Manual review after Dashboard code-review changes | Completed; no blocking issue found in checked flows, separate QA records retained, browser signed out | 2026-10-07 |
+| Other wedding planning features | Pending | Dashboard future modules display Coming soon; await the user's next instruction |
 
 ## Progress history
 
@@ -336,9 +338,72 @@ Checked the current-state summary, milestone table, and latest progress entry ag
 
 No application code was changed and no application tests were rerun for this status check. Documentation and commit-content validation: `git diff --check` passed. The commit/push result is recorded in Git history and the task handoff rather than claimed before it occurs.
 
+### 2026-10-07 — Approved Stitch dashboard implemented
+
+Implemented the finalized desktop/mobile Overview, empty, loading and error designs from Stitch project `9719362010133116550`. Reference screens: Overview `d16d1ad4b5d44be6af1cb35dc0d3e030` / `7d57295b07664621a7ebb45d2bb53581`, Empty `76d5d02f23e742b7b07b899d3c569bbb` / `3d0ec4d2aed943789528956944d27876`, Loading `20efa96bc7094c57b1e42f571ae47428` / `1551787368d0451498c219295ede704e`, Error `fb26b363531c453483fc5e17c24a94da` / `26071566daed4364917fcda58297e02b`.
+
+Implemented scope:
+
+- Replaced the welcome placeholder at `/dashboard` with a responsive overview using the existing fonts, colors, workspace shell and local icon system. Wedding banner shows saved groom-first names, monogram fallback, calendar date and location, and permitted Add task/Add event actions.
+- Countdown compares the saved UTC wedding calendar date to the India calendar day: days before the wedding, Today is your wedding day on the date, and Our wedding afterwards. No demonstration date controls, negative countdown or fictitious couple photo.
+- Protected `GET /api/v1/dashboard` provides independent Tasks/Events results. Optional `section=tasks` / `section=events` supports separate loading and Retry through the standard API contract. All scope derives from the current session; no additional fields, collections, indexes or dependencies.
+- A single Tasks aggregation returns wedding-global total/completed/unfinished/overdue counts and a bounded attention preview, with overdue included in unfinished. Progress uses rounded completed/total; successful empty results show zeros and an unfilled track. Overdue and unfinished deadlines within seven rolling days appear earliest-first (three preview rows). Linked event names are constrained to the same wedding. More results direct the user to the full checklist.
+- Attention rows link to saved Tasks/Events, show IST deadlines/status/priority and support completion through the existing protected/rate-limited status endpoint. The dashboard reloads Tasks after success. Central permissions determine completion availability; FAMILY_MEMBER cannot complete unassigned tasks or create tasks/events. Failed updates preserve progress and expose a readable inline error.
+- The next five upcoming/ongoing events use existing Events service semantics and chronological order, saved dates/times/venues and real detail links. No events and past-only events have distinct empty states.
+- Independent task/event skeletons, failure states and Retry preserve the successful section and do not fabricate empty data on failure. The Stitch demonstration-only Events Failure Preview is excluded. Budget & Expenses, Guests & RSVP, Gallery, Recent Activity and Wedding Website consistently display Coming soon, without invented figures, feeds or active controls. Workspace navigation marks unavailable modules Coming soon.
+- Updated API implementation notes and added meaningful countdown, data isolation/aggregation, partial failure and browser regressions. Standard smoke configuration excludes database-mutating dashboard tests, which require the disposable browser database.
+
+Validation results:
+
+| Check | Result |
+| --- | --- |
+| `npm run test` | 68 unit/component tests across 16 files passed |
+| `npm run test:integration` | 26 isolated integration tests across 4 files passed |
+| Initial `npm run test:e2e:auth` | 17 of 18 passed; dashboard family fixture read `data.user` although registration returns the user directly in `data`. Corrected the fixture; no application permission was weakened. |
+| Focused dashboard browser rerun | All 4 passed, including family permissions and desktop/mobile loading, empty, task/event errors, separate Retry, completion persistence, navigation and widths 320/390/768/1024/1280/1440/1536. |
+| Final `npm run test:e2e:auth -- tests/e2e/dashboard-flow.spec.ts tests/e2e/tasks-flow.spec.ts` | All 7 passed after the final inline-error layout refinement: 4 dashboard flows and 3 existing Tasks flows. |
+| Final `npm run typecheck`, `npm run lint`, `npm run build` | All passed. Initial lint identified render-time clock access and effect state updates; moved clock access to the server service and state updates to asynchronous fetch completion. |
+| `npm run test:e2e:list` | Passed; 7 standard smoke tests discovered. Isolated dashboard tests stay in the auth configuration. |
+| `git diff --check` | Passed. |
+
+Self-review covered private scope, role enforcement, safe DTOs, aggregation consistency, deadline/event semantics, failed mutations and request cancellation. Desktop/mobile screenshots for overview, empty, loading and both partial-failure directions were visually inspected. The final refinement moves task-mutation errors beneath the attention row rather than narrowing the title column; updated desktop/mobile screenshots were inspected and the final checks above passed. Screenshot evidence stays in ignored `test-results`, not committed artifacts.
+
+Limitations: dashboard summaries update on navigation/reload, completion or Retry, not through live cross-browser synchronization. Separate family account/assignment UI, wedding photo upload, budget/guests/gallery/activity/website implementations, email and reminders remain deferred. At this implementation milestone, manual Atlas-backed dashboard testing and production dashboard deployment had not been performed. The subsequent manual review is recorded below; dashboard deployment remains unverified. The user’s design → build → code review → manual testing → push workflow remains in effect. No commit or push was performed during implementation.
+
+### 2026-10-07 — Manual review after Dashboard code-review changes
+
+At the user's request, tested the current working tree after their reported code review. Manual browser testing used a new **Dashboard Manual QA** account and **Dashboard QA Groom & Dashboard QA Bride** wedding against the configured Atlas database `make-my-marriage`. Earlier wedding/account records were not edited or deleted.
+
+Manual checks passed:
+
+- Anonymous dashboard access redirects to login. Signup creates the separate QA account/wedding and opens the dashboard with saved groom-first names, initials, **28 February 2027**, and **QA Hyderabad**. The countdown correctly shows **144 days to go** on 7 October 2026 in India.
+- A fresh wedding shows zero task counts, unfilled progress, the task/event empty states, and five Coming soon cards without fabricated figures or active future-module controls. Sidebar links remain available for Dashboard, Events and Tasks; unfinished modules are marked Coming soon.
+- The photographer quick-start link prefills the Add form. Leaving without saving keeps the dashboard at zero tasks; no suggestion is seeded. Dashboard Add task and Add event links open the existing forms.
+- Created **QA Dashboard — Past celebration** for 28 February 2020, 10:00 am IST. The dashboard changes from its no-events state to **No upcoming events**, with access to the past-event view. Created **QA Dashboard — Haldi** for 28 February 2027, 10:00 am IST at **QA Family Hall**; only the upcoming ceremony appears in the dashboard timeline with correct saved details.
+- Created three tasks through the UI: event-linked **QA Dashboard — Finalize catering**, High/In progress, overdue at **29 February 2020, 12:15 am IST** with Telugu notes; Wedding-wide **QA Dashboard — Confirm outfits**, Medium/To do, due **8 October 2026, 6:00 pm IST**; and Wedding-wide **QA Dashboard — Book photographer**, Low/To do, with no deadline.
+- Global totals correctly show three unfinished tasks and one overdue task. Attention orders the overdue task before tomorrow's task, displays the correct event/deadline/status/priority and Due soon label, and excludes the undated task while retaining it in global totals.
+- Completing the overdue task from the mobile dashboard refreshes Tasks to **33%**, one completed, two unfinished and zero overdue; the completed row disappears. Completing the due-soon task on desktop changes progress to **67%**, two completed and one unfinished, and shows **No tasks needing attention** while preserving the undated unfinished task. Events remain usable while Tasks reload independently.
+- Attention task and upcoming event detail links reach the correct saved records. Desktop screenshots and the populated mobile dashboard at **320 pixels** were visually reviewed; mobile content has no horizontal overflow. Workspace menu Escape closes the menu and returns focus to its trigger.
+- Refresh retains the session and saved dashboard results. Logout blocks direct dashboard access. A fresh valid login with uppercase email restores the wedding, three tasks, **67%** completion, no attention rows, and the saved upcoming ceremony.
+- No browser console warning/error entries were returned during the reviewed flows. The browser was signed out after testing and the temporary viewport override was reset. Screenshot evidence is saved outside the repository.
+
+Fresh automated validation passed without a failed test run:
+
+| Check | Result |
+| --- | --- |
+| `npm run test -- --maxWorkers=1` | 68 unit/component tests across 16 files passed |
+| `npm run test:integration` | 26 isolated integration tests across 4 files passed |
+| `npm run test:e2e:auth` | All 18 isolated browser tests passed, including all four Dashboard flows and existing authentication, Events, Tasks and homepage regressions |
+
+The isolated suites exercise countdown day boundaries, aggregation/isolation, family permissions, loading skeletons, both partial-failure directions, separate Retry recovery, failed completion retaining progress, persistence, and wider responsive sizes. Failure injection and other-role permissions were tested in the disposable databases rather than by altering Atlas permissions or service availability. Application code was not changed during this review; typecheck, lint, build and browser discovery were not rerun. Documentation validation: `git diff --check -- docs/PROJECT_STATUS.md` passed.
+
+No blocking issue was found in the checked implemented flows. The separate QA account/wedding, two QA events and three QA tasks remain in Atlas. Final state: catering and outfits are Completed; the undated photographer task remains To do; dashboard progress is 67%, overdue is zero, and Haldi is the upcoming event. No Atlas records were deleted. No dashboard commit, push or deployment was performed.
+
+Remaining limits: this validates the local development app, not the deployed production app. Dashboard refresh behavior and deferred modules remain as documented above; user acceptance and the next instruction are still required before publishing this increment.
+
 ## Next handoff
 
-Tasks implementation, user-reported code review, manual Atlas-backed testing, and fresh isolated regressions are complete for the approved increment. The user authorized committing and pushing the reviewed Tasks changes on `dev`. Next: agree the next feature and its designs with the user; no next-feature implementation has begun. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before implementing features that touch unresolved specifications, email, uploads, or reminders.
+Dashboard implementation, user-reported code review, manual Atlas-backed desktop/mobile testing and fresh isolated regressions are complete for the approved increment. The user authorized committing and pushing the reviewed Dashboard changes on dev. Next: agree the next feature and its designs with the user; deployment validation remains outstanding. The upcoming feature has not been selected; keep future dashboard modules marked Coming soon. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before features touching unresolved specifications, email, uploads or reminders.
 
 ## How to maintain this file
 

@@ -36,7 +36,7 @@ test("signup, saved wedding, persistence, logout and login work end to end", asy
   expect(current.status()).toBe(200);
   expect((await current.json()).data).not.toHaveProperty("passwordHash");
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sai Desktop & Priya Desktop" })).toBeVisible();
   await page.goto("/login");
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.getByRole("button", { name: "Log out", exact: true }).click();

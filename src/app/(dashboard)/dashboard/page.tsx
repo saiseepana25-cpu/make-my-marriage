@@ -1,29 +1,25 @@
 import type { Metadata } from "next";
 import { requirePageUser } from "@/features/auth/current-user";
-import { getCurrentWedding } from "@/features/weddings/service";
+import { dashboardOverview } from "@/features/dashboard/service";
+import { hasPermission } from "@/features/auth/permissions";
+import { FutureModules, WeddingOverview } from "@/components/dashboard/dashboard-ui";
+import { DashboardEventsSection, DashboardTasksSection } from "@/components/dashboard/dashboard-sections";
 
 export const metadata: Metadata = { title: "Dashboard", robots: { index: false, follow: false } };
 
 export default async function Page() {
-  const user = await requirePageUser();
-  const wedding = await getCurrentWedding();
-  const date = new Intl.DateTimeFormat("en-IN", { dateStyle: "long", timeZone: "UTC" }).format(new Date(wedding.weddingDate));
-  return <div className="space-y-8">
-    <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary">Your shared wedding space</p>
-      <h1 className="font-display-lg text-[34px] leading-tight text-primary">Dashboard</h1>
-      <p className="mt-3 text-on-surface-variant">Welcome, {user.name}. Your wedding workspace is ready.</p>
+  await requirePageUser();
+  const { user, wedding, asOf } = await dashboardOverview();
+  const canAddTasks = hasPermission(user.role, "tasks:manage");
+  const canAddEvents = hasPermission(user.role, "events:manage");
+  return <div className="space-y-6 sm:space-y-8">
+    <WeddingOverview wedding={wedding} asOf={asOf} canAddTasks={canAddTasks} canAddEvents={canAddEvents} />
+    <div className="grid min-w-0 grid-cols-1 items-start gap-6 sm:gap-8 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="min-w-0 space-y-6 sm:space-y-8">
+        <DashboardTasksSection canAdd={canAddTasks} />
+        <DashboardEventsSection canAdd={canAddEvents} />
+      </div>
+      <FutureModules />
     </div>
-    <section aria-labelledby="wedding-title" className="rounded-[28px] border border-outline-variant/50 bg-surface-container-lowest p-6 sm:p-9">
-      <p className="mb-3 text-sm font-medium text-on-surface-variant">Celebrating together</p>
-      <h2 id="wedding-title" className="font-display-md text-[32px] leading-tight text-primary">{wedding.groomName} <span className="italic">&amp;</span> {wedding.brideName}</h2>
-      <dl className="mt-7 grid gap-5 sm:grid-cols-2">
-        <div><dt className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Wedding date</dt><dd className="mt-2 text-lg">{date}</dd></div>
-        <div><dt className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Location</dt><dd className="mt-2 break-words text-lg">{wedding.location}</dd></div>
-      </dl>
-    </section>
-    <section aria-labelledby="planning-title" className="rounded-[28px] bg-surface-container-low p-6 sm:p-9">
-      <h2 id="planning-title" className="font-display-md text-[25px] leading-snug text-primary">A fresh start for your wedding plans</h2>
-      <p className="mt-3 max-w-xl leading-relaxed text-on-surface-variant">Your wedding details are saved. This is where your events, tasks, and family updates will come together as you begin planning.</p>
-    </section>
   </div>;
 }

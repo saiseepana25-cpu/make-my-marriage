@@ -8,6 +8,7 @@ import { dashboardNavigation } from "@/config/navigation";
 import type { CurrentUser } from "@/types/domain";
 
 const icons = ["grid_view", "calendar_month", "checklist", "group", "account_balance_wallet", "photo_library", "family_restroom", "history_edu", "language", "settings"] as const;
+const availableRoutes = new Set(["/dashboard", "/events", "/tasks"]);
 
 export function Sidebar({ couple, date, user }: { couple: string; date: string; user: CurrentUser }) {
   const pathname = usePathname();
@@ -40,6 +41,10 @@ export function Sidebar({ couple, date, user }: { couple: string; date: string; 
         <nav aria-label="Wedding workspace" className="px-4"><ul className="space-y-1">
           {dashboardNavigation.map(({ href, label }, index) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
+            if (!availableRoutes.has(href)) return <li key={href}><span aria-disabled="true" className="flex items-center justify-between gap-2 rounded-xl px-4 py-2.5 text-sm text-on-surface-variant">
+              <span className="flex min-w-0 items-center gap-3"><Icon name={icons[index]} className="text-xl" /><span>{label}</span></span>
+              <span className="shrink-0 rounded-full bg-secondary-container px-2 py-0.5 text-[9px] text-on-secondary-container">Coming soon</span>
+            </span></li>;
             return <li key={href}><Link href={href} onClick={() => setOpen(false)} aria-current={active ? "page" : undefined}
               className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${active ? "bg-primary-container text-on-primary shadow-sm" : "text-on-surface-variant hover:bg-surface-container-low"}`}>
               <Icon name={icons[index]} className="text-xl" />{label}
