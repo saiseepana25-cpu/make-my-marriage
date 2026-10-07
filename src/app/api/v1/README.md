@@ -11,9 +11,13 @@ Implemented routes:
 - GET/POST /api/v1/events and GET/PUT/DELETE /api/v1/events/{eventId}: private event management.
 - GET/POST /api/v1/tasks and GET/PUT/DELETE /api/v1/tasks/{taskId}: shared wedding checklist.
 - PATCH /api/v1/tasks/{taskId}/status: status-only change with owner/admin or existing assignee authorization.
+- GET /api/v1/dashboard: independent Tasks, Events and Budget sections, with optional section selector.
+- GET/PUT /api/v1/budget: wedding-wide summary and totalBudget update.
+- GET/POST /api/v1/expenses and GET/PUT/DELETE /api/v1/expenses/{expenseId}: scoped expense management with derived payment status.
+- GET /api/v1/expenses/summary: wedding-wide totals and category/event/payment-status breakdowns.
 
-Future groups: remaining auth, members, wedding settings, dashboard, budget,
-activities, guests, expenses, photos/presign and photos/complete,
+Future groups: remaining auth, members, wedding settings,
+activities, guests, photos/presign and photos/complete,
 public/weddings/[slug] (including RSVP and guest photo uploads), internal/cron/reminders.
 
 Do not generate inert CRUD files. Add concrete handlers with feature development.

@@ -38,7 +38,6 @@ export function WeddingOverview({ wedding, asOf, canAddTasks, canAddEvents }: {
 }
 
 const futureModules = [
-  { title: "Budget & Expenses", description: "Track wedding costs and payments.", icon: "account_balance_wallet" },
   { title: "Guests & RSVP", description: "Organize your guest list and attendance.", icon: "group" },
   { title: "Gallery", description: "View and share wedding photos.", icon: "photo_library" },
   { title: "Recent Activity", description: "Follow wedding planning updates.", icon: "history_edu" },

@@ -1,0 +1,98 @@
+import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import mongoose from "mongoose";
+import { MongoMemoryReplSet } from "mongodb-memory-server-core";
+import { registerOwner } from "@/features/auth/service";
+import { ensureAuthIndexes } from "@/features/auth/indexes";
+import { createExpense, getExpense, updateExpense, deleteExpense, listExpenses, budgetSummary, updateBudget } from "@/features/expenses/service";
+import { createEvent, deleteEvent } from "@/features/events/service";
+import { UserModel } from "@/models/user";
+import { ExpenseModel } from "@/models/expense";
+import { POST, GET } from "@/app/api/v1/expenses/route";
+import { PUT, DELETE } from "@/app/api/v1/expenses/[expenseId]/route";
+import { GET as GETBudget, PUT as PUTBudget } from "@/app/api/v1/budget/route";
+import { GET as GETDashboard } from "@/app/api/v1/dashboard/route";
+const context = vi.hoisted(() => ({ cookie: null as string | null }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers(context.cookie ? { cookie: context.cookie } : {}) }));
+let mongo: MongoMemoryReplSet, owner: Awaited<ReturnType<typeof registerOwner>>;
+const registration = { name: "Sai", email: "expense@example.com", password: "12345678", relationshipType: "GROOM", wedding: { groomName: "Sai", brideName: "Adya", weddingDate: "2027-02-28", location: "Hyderabad" } };
+const expenseInput = { name: "Venue booking", category: "Venue", amount: 300000, paidAmount: 200000 };
+const eventInput = { name: "Haldi", venue: "Home", startAt: "2027-02-28T10:00:00+05:30" };
+const routeContext = (expenseId: string) => ({ params: Promise.resolve({ expenseId }) });
+const request = (method = "GET", body?: unknown, origin = "http://localhost:3000") => new Request("http://localhost:3000/api/v1/expenses", { method, headers: { origin, "content-type": "application/json" }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+beforeAll(async () => {
+  mongo = await MongoMemoryReplSet.create({ replSet: { count: 1, storageEngine: "wiredTiger" } });
+  vi.stubEnv("MONGODB_URI", mongo.getUri("mmm-test-expenses")); vi.stubEnv("MONGODB_DB_NAME", "mmm-test-expenses");
+  vi.stubEnv("AUTH_RATE_LIMIT_SECRET", "test-only-".repeat(8)); vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000"); vi.stubEnv("NODE_ENV", "development");
+  await ensureAuthIndexes();
+});
+beforeEach(async () => {
+  vi.restoreAllMocks(); context.cookie = null;
+  if (mongoose.connection.name !== "mmm-test-expenses") throw new Error("Unexpected integration database.");
+  for (const collection of Object.values(mongoose.connection.collections)) await collection.deleteMany({});
+  owner = await registerOwner(registration, null); context.cookie = `mmm_session=${owner.session.token}`;
+});
+afterAll(async () => { await mongoose.disconnect(); await mongo?.stop(); vi.unstubAllEnvs(); });
+test("expense CRUD derives scope/status, clears options and preserves omitted fields", async () => {
+  const event = await createEvent(eventInput);
+  const expense = await createExpense({ ...expenseInput, eventId: event.id, paidByName: " Sai ", notes: " Telugu శుభం ", weddingId: "forged", createdBy: "forged", paymentStatus: "PAID" });
+  expect(expense).toMatchObject({ paymentStatus: "PARTIALLY_PAID", outstanding: 100000, paidByName: "Sai", notes: "Telugu శుభం" });
+  expect(expense).not.toHaveProperty("weddingId"); expect(expense).not.toHaveProperty("createdBy");
+  expect(await getExpense(expense.id)).toEqual(expense);
+  const stored = await ExpenseModel.findById(expense.id).lean(); expect(stored?.weddingId.toString()).toBe(owner.user.weddingId); expect(stored?.createdBy.toString()).toBe(owner.user.id);
+  const updated = await updateExpense(expense.id, { paidAmount: 300000 }); expect(updated).toMatchObject({ name: "Venue booking", eventId: event.id, paymentStatus: "PAID", outstanding: 0 });
+  await expect(updateExpense(expense.id, { amount: 100 })).rejects.toMatchObject({ status: 400 }); expect((await getExpense(expense.id)).amount).toBe(300000);
+  const cleared = await updateExpense(expense.id, { eventId: null, paidByName: "", notes: null, paidAmount: 0 }); expect(cleared.eventId).toBeUndefined(); expect(cleared.notes).toBeUndefined(); expect(cleared.paidByName).toBeUndefined(); expect(cleared.paymentStatus).toBe("UNPAID");
+  await deleteExpense(expense.id); await expect(getExpense(expense.id)).rejects.toMatchObject({ status: 404 });
+});
+test("wedding global financial totals, group breakdowns and zero/unset/over-budget semantics", async () => {
+  expect(await budgetSummary()).toMatchObject({ totalBudget: null, totalExpenses: 0, remainingBudget: null, utilization: null });
+  const event = await createEvent(eventInput);
+  await createExpense({ ...expenseInput, eventId: event.id }); await createExpense({ name: "Catering", category: "Catering", amount: 200000, paidAmount: 150000, eventId: event.id });
+  await createExpense({ name: "Photography", category: "Photography", amount: 100000, paidAmount: 100000 }); await createExpense({ name: "Decor", category: "Decoration", amount: 50000 });
+  await updateBudget({ totalBudget: 1000000 });
+  expect(await budgetSummary()).toMatchObject({ totalBudget: 1000000, totalExpenses: 650000, totalPaid: 450000, outstanding: 200000, remainingBudget: 350000, utilization: 65, expenseCount: 4 });
+  const summary = await budgetSummary(); expect(summary.events.find(value => value.id === event.id)).toMatchObject({ label: "Haldi", amount: 500000, paidAmount: 350000 });
+  expect(summary.events.find(value => value.label === "Wedding-wide")?.amount).toBe(150000); expect(summary.paymentStatuses.find(value => value.label === "PARTIALLY_PAID")?.count).toBe(2);
+  await updateBudget({ totalBudget: 0 }); expect(await budgetSummary()).toMatchObject({ totalBudget: 0, remainingBudget: -650000, utilization: null });
+  await updateBudget({ totalBudget: 500000 }); expect(await budgetSummary()).toMatchObject({ remainingBudget: -150000, utilization: 130 });
+  expect((await (await GETDashboard(new Request("http://localhost:3000/api/v1/dashboard?section=budget"))).json()).data.totalExpenses).toBe(650000);
+});
+test("literal search, combined filters, pagination and summaries remain independent", async () => {
+  const event = await createEvent(eventInput);
+  await createExpense({ ...expenseInput, name: "Venue [deposit]", eventId: event.id }); await createExpense({ ...expenseInput, name: "Wedding-wide venue", paidAmount: 0 }); await createExpense({ name: "Custom", category: "Custom family cost", amount: 0.29, paidAmount: 0.29 });
+  expect((await listExpenses(new URLSearchParams(`search=%5Bdeposit%5D&category=Venue&paymentStatus=PARTIALLY_PAID&eventId=${event.id}`))).expenses).toHaveLength(1);
+  expect((await listExpenses(new URLSearchParams("eventId=wedding-wide"))).expenses).toHaveLength(2);
+  expect((await listExpenses(new URLSearchParams("limit=1&page=2"))).pagination).toMatchObject({ total: 3, pages: 3 });
+  expect((await budgetSummary()).totalExpenses).toBe(600000.29);
+  for (const query of ["paymentStatus=bad", "eventId=bad", "limit=101", "page=0"]) await expect(listExpenses(new URLSearchParams(query))).rejects.toMatchObject({ status: 400 });
+});
+test("cross-wedding CRUD, references, budget and family/admin policies fail closed", async () => {
+  const event = await createEvent(eventInput), expense = await createExpense(expenseInput);
+  const other = await registerOwner({ ...registration, email: "other-expense@example.com" }, null); context.cookie = `mmm_session=${other.session.token}`;
+  expect((await listExpenses()).expenses).toHaveLength(0); expect((await budgetSummary()).expenseCount).toBe(0);
+  for (const action of [() => getExpense(expense.id), () => updateExpense(expense.id, { name: "Forged" }), () => deleteExpense(expense.id)]) await expect(action()).rejects.toMatchObject({ status: 404 });
+  await expect(createExpense({ ...expenseInput, eventId: event.id })).rejects.toMatchObject({ status: 400 });
+  context.cookie = `mmm_session=${owner.session.token}`; await UserModel.updateOne({ _id: owner.user.id }, { role: "FAMILY_MEMBER" });
+  expect((await getExpense(expense.id)).name).toBe(expenseInput.name); expect((await budgetSummary()).totalExpenses).toBe(300000);
+  for (const action of [() => createExpense(expenseInput), () => updateExpense(expense.id, { name: "Denied" }), () => deleteExpense(expense.id), () => updateBudget({ totalBudget: 0 })]) await expect(action()).rejects.toMatchObject({ status: 403 });
+  await UserModel.updateOne({ _id: owner.user.id }, { role: "ADMIN" }); expect((await updateExpense(expense.id, { name: "Admin edit" })).name).toBe("Admin edit"); await updateBudget({ totalBudget: 1000000 });
+});
+test("event deletion clears expense links, including concurrent linking", async () => {
+  const event = await createEvent(eventInput), expense = await createExpense({ ...expenseInput, eventId: event.id });
+  const results = await Promise.allSettled([createExpense({ ...expenseInput, eventId: event.id }), deleteEvent(event.id)]);
+  expect(results[1].status).toBe("fulfilled"); if (results[0].status === "rejected") expect(results[0].reason).toMatchObject({ status: 400 });
+  expect((await getExpense(expense.id)).eventId).toBeUndefined(); expect(await ExpenseModel.countDocuments({ eventId: event.id })).toBe(0); expect((await budgetSummary()).events[0].label).toBe("Wedding-wide");
+});
+test("HTTP auth/origin/body bounds, errors and durable limits cover expenses and budget", async () => {
+  expect((await POST(request("POST", expenseInput, "https://evil.example"))).status).toBe(403);
+  expect((await PUTBudget(request("PUT", { totalBudget: 0 }, "https://evil.example"))).status).toBe(403);
+  const response = await POST(request("POST", expenseInput)); expect(response.status).toBe(201); const { data } = await response.json();
+  expect((await PUT(request("PUT", { amount: -1 }), routeContext(data.id))).status).toBe(400);
+  expect((await POST(request("POST", { ...expenseInput, notes: "x".repeat(33000) }))).status).toBe(413);
+  expect((await PUT(request("PUT", { paidAmount: 300000 }), routeContext(data.id))).status).toBe(200);
+  expect((await DELETE(request("DELETE"), routeContext(data.id))).status).toBe(204);
+  context.cookie = null; expect((await GET(request())).status).toBe(401); expect((await GETBudget()).status).toBe(401); context.cookie = `mmm_session=${owner.session.token}`;
+  await mongoose.connection.collection("rate_limits").deleteMany({}); vi.spyOn(Date, "now").mockReturnValue(Date.now());
+  for (let i = 0; i < 60; i++) await updateBudget({ totalBudget: i });
+  const blocked = await POST(request("POST", expenseInput)); expect(blocked.status).toBe(429); expect(Number(blocked.headers.get("retry-after"))).toBeGreaterThan(0);
+});

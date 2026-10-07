@@ -176,6 +176,8 @@ OWNER, ADMIN, and FAMILY_MEMBER authenticate using email and password. Guests do
 
 Dashboard implementation milestone (2026-10-07): the approved overview currently returns real Tasks and Events summaries; RSVP, budget, activities and photos remain future modules. `GET /api/v1/dashboard` returns independent `tasks` and `events` sections with `{ status: "ready", data }` or `{ status: "error", data: null }`. Optional `?section=tasks` or `?section=events` loads/retries one section through the standard response envelope and HTTP error handling. Authentication is required in both forms; wedding scope always comes from the session. Task counts cover the full wedding, while attention shows the earliest three unfinished tasks overdue or due within seven rolling days. Upcoming Events includes ongoing events and previews the next five chronologically. See [dashboard implementation notes](../src/features/dashboard/README.md).
 
+Budget & Expenses implementation milestone (2026-10-07): the dashboard now also returns an independent `budget` section; `?section=budget` returns the same real summary as `GET /api/v1/budget`. This supersedes the earlier dashboard milestone's Coming soon budget boundary. Budget/expense details are described under §13; guests/RSVP, activities and photos remain future modules.
+
 # 9. Event APIs
 
 | Method | Endpoint | Access | Purpose | Notes |
@@ -227,6 +229,12 @@ Dashboard implementation milestone (2026-10-07): the approved overview currently
 | PUT | /api/v1/expenses/{expenseId} | OWNER / ADMIN | Update expense | Includes payment status and paid amount |
 | DELETE | /api/v1/expenses/{expenseId} | OWNER / ADMIN | Delete expense | Hard delete |
 | GET | /api/v1/expenses/summary | Authenticated | Get expense summary | Totals by payment status/category/event |
+
+Approved Budget & Expenses form scope (2026-10-07): expense mutations accept `name`, `category`, `amount`, `paidAmount` (default 0), optional `eventId`, optional free-text `paidByName`, and optional `notes`. Payment status is server-derived from amount/paidAmount. Omitted fields survive partial updates, and optional fields can be explicitly cleared with null/empty values. Browser scope/authorship/status values cannot override server decisions. Stored member-payer references are preserved; a member-payer selector is outside this increment.
+
+`PUT /api/v1/budget` accepts `{ totalBudget: number }` and returns the saved value. Zero is a valid saved budget, distinct from unset. Amount must be positive; paid/budget nonnegative; paid cannot exceed amount. Numbers must be finite, within safe integer cents, and have at most two decimal places. `GET /api/v1/budget` and `GET /api/v1/expenses/summary` return `totalBudget` (null when unset), `totalExpenses`, `totalPaid`, `outstanding`, `remainingBudget`, `utilization`, `expenseCount`, and category/event/payment-status groups. Remaining = budget − expenses; outstanding = expenses − paid. Utilization is null for unset/zero budgets and otherwise may exceed 100%. The summary is wedding-global, independent of list filters/pagination.
+
+Expense list filters: literal `search` on name, exact `category`, `eventId` (ObjectId or `wedding-wide`), and `paymentStatus`; newest-first pagination defaults to 20/max 100. Lists return safe expenses, scoped event/category filter choices and pagination. OWNER/ADMIN mutations share a durable 60-per-minute per-user budget/expense counter and enforce same-origin requests with 32 KiB JSON bounds. All scope derives from the session; FAMILY_MEMBER reads only. No receipts, vendor entity, payment dates, allocations or additional schema fields are enabled. The outstanding receipt/extra-field specification conflicts remain deferred.
 
 # 14. Photo and S3 APIs
 

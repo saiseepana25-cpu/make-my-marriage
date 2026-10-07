@@ -1,0 +1,54 @@
+"use client";
+import { useState, type FormEvent } from "react";
+import Link from "next/link";
+import { money, paymentLabels } from "@/features/expenses/format";
+import type { BudgetSummary, ExpenseGroup, ExpenseList } from "@/features/expenses/types";
+import { PAYMENT_STATUSES } from "@/types/domain";
+import { Icon } from "@/components/marketing/icon";
+import { BudgetMetrics, expenseCard, expenseInput, ExpenseSkeleton, PaymentBadge, primaryAction, secondaryAction } from "./expense-ui";
+import { useExpenseData } from "./use-expense-data";
+
+export function ExpenseFailure({ label, expired, retry }: { label: string; expired: boolean; retry: () => void }) {
+  return <div role="alert" className={`${expenseCard} text-center`}><Icon name="warning" className="text-3xl text-primary" /><h2 className="mt-3 text-xl font-semibold">Couldn’t load {label}</h2><p className="mt-3 text-sm text-secondary">{expired ? "Your session has expired. Please log in again." : "Your saved data has not been changed. Please try again."}</p>{expired ? <Link href="/login" className={`${primaryAction} mt-5`}>Log in</Link> : <button type="button" onClick={retry} className={`${primaryAction} mt-5`}>Retry {label}</button>}</div>;
+}
+function Breakdown({ title, groups, total }: { title: string; groups: ExpenseGroup[]; total: number }) {
+  return <section className={expenseCard}><h2 className="text-lg font-semibold">{title}</h2><p className="mt-1 text-xs text-secondary">All wedding expenses, including unpaid amounts.</p>{groups.length ? <ul className="mt-5 space-y-5">{groups.map(group => <li key={group.id ?? group.label}><div className="flex justify-between gap-4 text-sm"><span className="min-w-0 break-words">{group.label}</span><span className="shrink-0 font-semibold">{money(group.amount)}</span></div><div aria-hidden="true" className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-container"><div className="h-full rounded-full bg-primary-container" style={{ width: `${total ? Math.min(100, group.amount / total * 100) : 0}%` }} /></div><p className="mt-2 text-xs text-secondary">Paid {money(group.paidAmount)} · Outstanding {money(group.outstanding)}</p></li>)}</ul> : <p className="mt-6 text-sm text-secondary">Add expenses to see your breakdown here.</p>}</section>;
+}
+function SummarySection({ manage }: { manage: boolean }) {
+  const { state, reload } = useExpenseData<BudgetSummary>("/api/v1/budget");
+  if (state.status === "loading") return <ExpenseSkeleton label="Loading budget summary" />;
+  if (state.status === "error") return <ExpenseFailure label="budget summary" expired={state.expired} retry={reload} />;
+  const summary = state.data;
+  return <div className="space-y-6">{summary.totalBudget === null && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-primary-fixed/40 p-4"><p className="text-sm">Your wedding budget is not set. Expenses can still be recorded.</p>{manage && <Link href="/budget/edit" className={secondaryAction}>Set budget</Link>}</div>}
+    <BudgetMetrics summary={summary} /><div className="grid gap-6 lg:grid-cols-2"><Breakdown title="Expenses by category" groups={summary.categories} total={summary.totalExpenses} /><Breakdown title="Expenses by related event" groups={summary.events} total={summary.totalExpenses} /></div>
+  </div>;
+}
+function ExpenseLedger({ query, apply, manage }: { query: string; apply: (query: string) => void; manage: boolean }) {
+  const { state, reload } = useExpenseData<ExpenseList>(`/api/v1/expenses?${query}`);
+  if (state.status === "loading") return <ExpenseSkeleton label="Loading expenses" />;
+  if (state.status === "error") return <ExpenseFailure label="expenses" expired={state.expired} retry={reload} />;
+  const { expenses, events, categories, pagination } = state.data;
+  const params = new URLSearchParams(query), filtered = ["search", "category", "eventId", "paymentStatus"].some(key => !!params.get(key));
+  const eventNames = new Map(events.map(event => [event.id, event.name]));
+  function filters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); const next = new URLSearchParams();
+    new FormData(event.currentTarget).forEach((value, key) => { if (typeof value === "string" && value.trim()) next.set(key, value.trim()); });
+    apply(next.toString());
+  }
+  function page(value: number) { const next = new URLSearchParams(query); next.set("page", String(value)); apply(next.toString()); }
+  return <section aria-labelledby="expenses-heading" className="min-w-0 overflow-hidden rounded-2xl bg-surface-container-lowest shadow-sm"><div className="space-y-5 p-5 sm:p-7"><div className="flex flex-wrap items-center justify-between gap-3"><h2 id="expenses-heading" className="text-xl font-semibold">Expenses</h2><p className="text-xs text-secondary">{pagination.total} {filtered ? "matching" : "saved"} expenses · Newest first</p></div>
+    <form onSubmit={filters} aria-label="Expense filters" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><input name="search" aria-label="Search expenses" placeholder="Search expense name…" maxLength={120} defaultValue={params.get("search") ?? ""} className={expenseInput} /><select name="category" aria-label="Filter by category" defaultValue={params.get("category") ?? ""} className={expenseInput}><option value="">All categories</option>{categories.map(category => <option key={category}>{category}</option>)}</select><select name="eventId" aria-label="Filter by event" defaultValue={params.get("eventId") ?? ""} className={expenseInput}><option value="">All events</option><option value="wedding-wide">Wedding-wide</option>{events.map(event => <option key={event.id} value={event.id}>{event.name}</option>)}</select><select name="paymentStatus" aria-label="Filter by payment status" defaultValue={params.get("paymentStatus") ?? ""} className={expenseInput}><option value="">All payment statuses</option>{PAYMENT_STATUSES.map(status => <option key={status} value={status}>{paymentLabels[status]}</option>)}</select><div className="flex flex-wrap gap-3 sm:col-span-2 xl:col-span-4"><button type="submit" className={secondaryAction}>Apply filters</button><button type="button" onClick={() => apply("")} className="min-h-11 px-3 text-xs text-secondary underline">Clear filters</button></div></form>
+  </div>{expenses.length ? <><div className="hidden grid-cols-[1.6fr_.8fr_1fr_1fr_.8fr_.9fr_1fr] gap-3 bg-surface-container-low px-7 py-3 text-[10px] font-semibold uppercase tracking-wide text-secondary xl:grid" aria-hidden="true"><span>Expense</span><span>Category</span><span>Related event</span><span>Total amount</span><span>Paid</span><span>Outstanding</span><span>Status</span></div>
+    {expenses.map(expense => <article key={expense.id} className="grid min-w-0 gap-4 border-t border-outline-variant/30 p-5 sm:p-7 xl:grid-cols-[1.6fr_.8fr_1fr_1fr_.8fr_.9fr_1fr] xl:items-center"><div className="min-w-0"><h3 className="break-words text-sm font-semibold"><Link href={`/budget/expenses/${expense.id}`} className="hover:text-primary">{expense.name}</Link></h3><Link href={`/budget/expenses/${expense.id}`} className="mt-2 inline-flex min-h-9 items-center text-xs text-primary underline">View details<span className="sr-only"> for {expense.name}</span></Link></div><p className="break-words text-xs text-secondary">{expense.category}</p><p className="break-words text-xs text-secondary">{expense.eventId ? eventNames.get(expense.eventId) ?? "Event unavailable" : "Wedding-wide"}</p><dl className="grid grid-cols-3 gap-3 xl:contents">{[["Total", expense.amount], ["Paid", expense.paidAmount], ["Outstanding", expense.outstanding]].map(([label, amount]) => <div key={label} className="min-w-0"><dt className="mb-1 text-[10px] text-secondary xl:sr-only">{label}</dt><dd className="break-words text-xs font-semibold sm:text-sm">{money(Number(amount))}</dd></div>)}</dl><div><PaymentBadge status={expense.paymentStatus} /></div></article>)}
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/30 p-5 text-xs text-secondary"><p>Showing {expenses.length} of {pagination.total} expenses</p>{pagination.pages > 1 && <nav aria-label="Expense pagination" className="flex items-center gap-3">{pagination.page > 1 && <button type="button" onClick={() => page(pagination.page - 1)} className={secondaryAction}>Previous</button>}<span>Page {pagination.page} of {pagination.pages}</span>{pagination.page < pagination.pages && <button type="button" onClick={() => page(pagination.page + 1)} className={secondaryAction}>Next</button>}</nav>}</div></>
+    : <div className="px-5 py-12 text-center"><Icon name="account_balance_wallet" className="text-4xl text-primary" /><h3 className="mt-4 font-display-md text-2xl text-primary">{filtered ? "No expenses match these filters" : "Your expense ledger starts here"}</h3><p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-secondary">{filtered ? "Try another search or clear your filters to see your saved expenses." : "Record your first wedding expense to track costs, payments and outstanding amounts together."}</p>{filtered ? <button type="button" onClick={() => apply("")} className={`${secondaryAction} mt-6`}>View all expenses</button> : manage && <Link href="/budget/expenses/new" className={`${primaryAction} mt-6`}>Add your first expense</Link>}</div>}
+  </section>;
+}
+export function BudgetOverview({ manage, couple, saved, deleted }: { manage: boolean; couple: string; saved: boolean; deleted: boolean }) {
+  const [query, setQuery] = useState("");
+  return <div className="space-y-6"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-secondary">Wedding workspace · {couple}</p><h1 className="mt-2 font-display-md text-3xl text-primary sm:text-4xl">Budget &amp; Expenses</h1><p className="mt-3 text-sm leading-relaxed text-secondary">Track your wedding costs, payments made, and the plans still ahead.</p></div>{manage && <div className="flex flex-wrap gap-3"><Link href="/budget/edit" className={secondaryAction}>Set / edit budget</Link><Link href="/budget/expenses/new" className={primaryAction}><Icon name="add" />Add expense</Link></div>}</div>
+    {saved && <p role="status" className="rounded-xl bg-secondary-container p-4 text-sm">Wedding budget saved successfully.</p>}{deleted && <p role="status" className="rounded-xl bg-secondary-container p-4 text-sm">Expense deleted. Your budget and other wedding records are preserved.</p>}
+    {!manage && <p className="rounded-xl bg-surface-container-lowest p-4 text-sm text-secondary">View-only access. You can view wedding finances; changes are managed by the owner and admins.</p>}
+    <SummarySection manage={manage} /><ExpenseLedger key={query} query={query} apply={setQuery} manage={manage} />
+  </div>;
+}

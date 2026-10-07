@@ -13,7 +13,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
       <Sidebar couple={couple} date={date} user={user} />
       <div className="min-h-screen lg:pl-72">
         <div className="sticky top-0 z-20"><Header authenticated couple={couple} /></div>
-        <main id="main-content" tabIndex={-1} className="mx-auto w-full min-w-0 max-w-[1440px] px-5 py-7 sm:px-8 lg:px-10 lg:py-10">
+        <main id="main-content" tabIndex={-1} className="mx-auto w-full min-w-0 max-w-[1440px] px-5 py-7 pb-28 sm:px-8 lg:px-10 lg:py-10">
           {children}
         </main>
       </div>

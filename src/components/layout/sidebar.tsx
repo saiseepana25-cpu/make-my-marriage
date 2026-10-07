@@ -8,7 +8,7 @@ import { dashboardNavigation } from "@/config/navigation";
 import type { CurrentUser } from "@/types/domain";
 
 const icons = ["grid_view", "calendar_month", "checklist", "group", "account_balance_wallet", "photo_library", "family_restroom", "history_edu", "language", "settings"] as const;
-const availableRoutes = new Set(["/dashboard", "/events", "/tasks"]);
+const availableRoutes = new Set(["/dashboard", "/events", "/tasks", "/budget"]);
 
 export function Sidebar({ couple, date, user }: { couple: string; date: string; user: CurrentUser }) {
   const pathname = usePathname();
@@ -57,5 +57,8 @@ export function Sidebar({ couple, date, user }: { couple: string; date: string; 
         <div className="min-w-0"><p className="truncate text-sm font-semibold">{user.name}</p><p className="text-xs text-on-surface-variant">{user.role === "OWNER" ? "Owner" : user.role === "ADMIN" ? "Admin" : "Family member"}</p></div>
       </div>
     </aside>
+    <nav aria-label="Quick workspace navigation" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-outline-variant/30 bg-surface-container-lowest px-2 pb-[env(safe-area-inset-bottom)] lg:hidden">
+      {[["/dashboard", "Overview", "grid_view"], ["/events", "Events", "calendar_month"], ["/tasks", "Tasks", "checklist"], ["/budget", "Budget", "account_balance_wallet"]].map(([href, label, icon]) => <Link key={href} href={href} aria-current={pathname === href || pathname.startsWith(`${href}/`) ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] ${pathname === href || pathname.startsWith(`${href}/`) ? "font-semibold text-primary" : "text-secondary"}`}><Icon name={icon as typeof icons[number]} className="text-xl" />{label}</Link>)}
+    </nav>
   </>;
 }
