@@ -219,6 +219,10 @@ Budget & Expenses implementation milestone (2026-10-07): the dashboard now also 
 | PUT | /api/v1/guests/{guestId} | OWNER / ADMIN | Update guest | Can update contact and RSVP fields administratively |
 | DELETE | /api/v1/guests/{guestId} | OWNER / ADMIN | Delete guest | Hard delete |
 
+Guest Management implementation milestone (2026-10-08): the approved private guest screens use individual records and an optional `familyName` label, without household grouping or additional schema fields. Mutations accept only `name`, `phone`, `email`, `familyName`, `numberInvited`, `numberAttending`, `rsvpStatus`, and `notes`; creation requires name and status. Optional counts remain unset when blank and accept zero/nonnegative safe integers. Partial updates preserve omitted fields, while optional values can be explicitly cleared with null/empty values. Creation records an initial `rsvpUpdatedAt`; later changes to status or numberAttending update it, while unrelated or identical edits preserve it. Scope and timestamps are server-controlled.
+
+The list additionally supports literal `search` across name/family/phone/email, `rsvpStatus`, exact `familyName` or `withoutFamily=true`, and the common pagination contract. Its response contains `guests`, wedding-global `families` options and `pagination`. `GET /api/v1/guests/summary` returns `{ total, pending, attending, notAttending }`, counting individual records independently of list filters/pagination. The dashboard now includes an independent `guests` ready/error section and supports `?section=guests` for the same summary. These supersede the earlier dashboard Coming soon boundary for private guests only; public guest RSVP and invitation sending remain future work. See [guest implementation notes](../src/features/guests/README.md) for validation, permissions and interaction boundaries.
+
 # 13. Expense APIs
 
 | Method | Endpoint | Access | Purpose | Notes |

@@ -5,6 +5,7 @@ import { hasPermission } from "@/features/auth/permissions";
 import { FutureModules, WeddingOverview } from "@/components/dashboard/dashboard-ui";
 import { DashboardEventsSection, DashboardTasksSection } from "@/components/dashboard/dashboard-sections";
 import { DashboardBudget } from "@/components/dashboard/dashboard-budget";
+import { DashboardGuests } from "@/components/dashboard/dashboard-guests";
 
 export const metadata: Metadata = { title: "Dashboard", robots: { index: false, follow: false } };
 
@@ -20,7 +21,7 @@ export default async function Page() {
         <DashboardTasksSection canAdd={canAddTasks} />
         <DashboardEventsSection canAdd={canAddEvents} />
       </div>
-      <div className="min-w-0 space-y-5"><DashboardBudget manage={hasPermission(user.role, "budget:manage")} /><FutureModules /></div>
+      <div className="min-w-0 space-y-5"><DashboardBudget manage={hasPermission(user.role, "budget:manage")} /><DashboardGuests manage={hasPermission(user.role, "guests:manage")} /><FutureModules /></div>
     </div>
   </div>;
 }

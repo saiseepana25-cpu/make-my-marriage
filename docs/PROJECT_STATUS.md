@@ -1,6 +1,6 @@
 # Make My Marriage — Project Status
 
-Last updated: **2026-10-07**
+Last updated: **2026-10-08**
 
 This is the living implementation log for Make My Marriage. Read it before starting development and update it after each major feature or substantial feature change. It records what exists, what was verified, and what remains to be built.
 
@@ -8,13 +8,13 @@ The product and technical specifications remain in [PRD.md](PRD.md), [SYSTEM_DES
 
 ## Current state
 
-**Latest increment (2026-10-07): Budget & Expenses is implemented and locally verified from the finalized Stitch designs.** `/budget` provides real saved budget/expense data, payment totals and breakdowns; the dashboard budget card replaces its Coming soon placeholder. The delegated read-only code review found no actionable issues, and the user authorized commit/push to `dev`. Manual Atlas-backed acceptance remains pending; production deployment is unverified. Git history records the commit/push outcome.
+**Latest increment (2026-10-08): Guest Management is implemented from the finalized Stitch designs and verified with disposable local databases.** `/guests` provides saved individual guest records, attendance totals, search/filters, details, editing and confirmed deletion; the dashboard uses real guest totals. Implementation self-review, desktop/mobile checks and the delegated read-only code review are complete. The user authorized commit/push to `dev`; manual Atlas acceptance and production validation remain pending. Git history records the commit/push outcome.
 
-The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events, shared Tasks, Dashboard and Budget & Expenses are implemented. The user reports previous app changes were committed, pushed and deployed to Vercel. Authentication, Events, Tasks and Dashboard have earlier manual Atlas-backed reviews. Budget verification uses disposable local databases and has not changed Atlas records. The local preview uses `http://localhost:3000/` and its health endpoint returned 200 after the feature build. Production deployment has not been independently verified during this increment.
+The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events, shared Tasks, Dashboard, Budget & Expenses and private Guest Management are implemented. The user reports recent changes were pushed; earlier app changes were deployed to Vercel. Authentication, Events, Tasks and Dashboard have earlier manual Atlas-backed reviews. Budget and Guest implementation verification uses disposable local databases and has not changed Atlas records. The local preview at `http://localhost:3000/` returned 200 from its health endpoint during this increment. Production deployment has not been independently verified.
 
-Signup atomically creates an OWNER and wedding; login/logout use persisted 30-day sessions. Events and Tasks provide saved CRUD and protected role policies. Dashboard shows wedding identity/countdown, task progress/attention, upcoming events and real budget totals, with independent loading/retry. Budget supports saved zero/unset budgets, expense CRUD, derived payment status, paid/outstanding/remaining/utilization, breakdowns, filters and view-only FAMILY_MEMBER access. Guests/RSVP, Gallery, Recent Activity and Wedding Website dashboard cards remain Coming soon; other planning/public wedding modules remain placeholders. Homepage previews are illustrative; no planning samples are seeded into real weddings.
+Signup atomically creates an OWNER and wedding; login/logout use persisted 30-day sessions. Events and Tasks provide saved CRUD and protected role policies. Dashboard shows wedding identity/countdown, task progress/attention, upcoming events, real budget totals and guest record counts, with independent loading/retry. Budget supports saved zero/unset budgets, expense CRUD, derived payment status, totals, breakdowns and filters. Guests supports the eight approved fields, optional/zero counts, family labels, contact links, manually maintained attendance and timestamps. OWNER/ADMIN manage guests; FAMILY_MEMBER can view. Guest self-service RSVP and invitation sending remain Coming soon, alongside Gallery, Recent Activity and Wedding Website. Homepage previews are illustrative; no planning samples are seeded into real weddings.
 
-Groom-first name order remains throughout. Budget implementation validation passed 74 unit/component tests, 32 isolated integration tests and all 22 isolated browser regressions, including existing auth/homepage/Events/Tasks/Dashboard flows. Final focused Budget unit and integration checks passed after refinements; typecheck, lint, production build and browser discovery passed. Desktop/mobile screenshots were inspected and tested widths 320–1440 had no horizontal overflow. Earlier validation history and remaining limitations are preserved below; these checks do not claim production or manual Atlas acceptance.
+Groom-first name order remains throughout. Guest validation passed 79 unit/component tests and 38 isolated integration tests. Browser coverage now includes 26 flows: the first full run passed 24, with an authentication network suspension and an ambiguous new test selector; a focused six-flow rerun passed after correction. The final mobile layout fix passed its focused browser check. Typecheck, lint, focused Guest unit tests, the final production build and browser discovery passed. Desktop/mobile screenshots were inspected and widths 320–1440 had no horizontal overflow. These checks do not claim production or manual Atlas acceptance.
 
 ## Milestone summary
 
@@ -32,7 +32,8 @@ Groom-first name order remains throughout. Budget implementation validation pass
 | Manual review after Tasks code-review changes | Completed; no blocking issue found in checked flows, QA records retained, browser signed out | 2026-10-06 |
 | Dashboard overview | Implemented; user-reported code review complete; fresh isolated regressions and manual Atlas-backed desktop/mobile checks passed | 2026-10-07 |
 | Manual review after Dashboard code-review changes | Completed; no blocking issue found in checked flows, separate QA records retained, browser signed out | 2026-10-07 |
-| Budget & Expenses | Implemented, locally verified and code-reviewed; commit/push authorized; manual Atlas acceptance pending | 2026-10-07 |
+| Budget & Expenses | Implemented, locally verified, code-reviewed and pushed in `2a35a8b`; manual Atlas acceptance pending | 2026-10-07 |
+| Guest Management | Implemented, locally verified and code-reviewed; commit/push authorized; manual Atlas acceptance pending | 2026-10-08 |
 | Other wedding planning features | Pending | Dashboard future modules display Coming soon; await the user's next instruction |
 
 ## Progress history
@@ -429,9 +430,48 @@ The delegated read-only review against `17c9c3a37df32a669b344ef14f358af5404c23d8
 
 The user subsequently authorized committing and pushing the reviewed changes to `dev`. This handoff updates documentation and removes trailing blank lines flagged when new files were staged, without changing application behavior or rerunning the previously recorded suites. Manual Atlas-backed Budget acceptance remains pending; push authorization does not imply that acceptance or production validation has occurred. Git history and the task handoff record the actual commit/push result.
 
+### 2026-10-08 — Approved Stitch Guest Management implemented
+
+Implemented the finalized desktop Guest Management designs in Stitch project `9719362010133116550`, with responsive code rather than requiring separate mobile designs. Primary references: Overview `cb74b11a04e6413dadea26b05a24dfdd`, Add `fe7084e832e145cca63992ec02627686`, Edit `1264bfe9ab364033953177da895aca98`, and corrected Details `41a6872dcadf48cba223d22432782e20`. Historical duplicate details screens were not used. The agreed design → build → code review → manual testing → push workflow remains in effect.
+
+Implemented scope:
+
+- Protected `/guests`, `/guests/new`, `/guests/[guestId]` and `/guests/[guestId]/edit`, with existing fonts/colors, shared workspace shell and groom-first names. Guest navigation is enabled and the dashboard shows real saved guest totals.
+- Individual guest records with exactly name, optional phone/email/familyName, optional numberInvited/numberAttending, attendance status and optional free-text notes. Blank counts are distinct from zero; optional values can be cleared. No schema fields, indexes, collections or dependencies were added. The existing Guest weddingId index is provisioned lazily.
+- Wedding-global record counts for total/pending/attending/not attending, independent of filtered/paginated results and optional people counts. Literal name/family/phone/email search, exact family or No family name, attendance filters, clear filters and eight-record UI pagination. Family suggestions come from saved wedding records.
+- Persisted create/read/update/hard-delete APIs under `/api/v1/guests`, a summary endpoint, and a separate dashboard guest section. Scope derives from the authenticated user, DTOs allowlist fields, mutations enforce central permissions, same origin, bounded input and durable 60-per-minute user limits. Foreign/missing records are unavailable; FAMILY_MEMBER has view-only access.
+- Server-maintained created/updated/attendance timestamps shown in IST. Initial creation records attendance time; later status or numberAttending changes update it, while identical attendance saves and unrelated edits preserve it. Transaction retries preserve unrelated concurrent partial edits. Deleting one guest leaves other same-family guests unchanged and recalculates totals.
+- Loading, empty, no-results, independent summary/list/dashboard errors and retry, inline validation/focus, preserved failed-save input, in-flight action locks, read-only details, unavailable records and confirmed deletion with Cancel/Escape/focus return/retry. Visual review corrected a narrow mobile name header missed by overflow-only checks; buttons now wrap below the identity on phones and a browser assertion guards its readable width.
+
+Validation:
+
+| Check | Actual result |
+| --- | --- |
+| `npm run test -- --maxWorkers=1` | 79 tests across 18 files passed; the initial new test run failed on a label matching both the family input and suggestions container, corrected with an input-specific selector |
+| `npm run test:integration` | 38 tests across 6 files passed using disposable MongoDB replica sets |
+| `npm run test:e2e:auth` | First 26-flow run: 24 passed, authentication reload failed with `ERR_NETWORK_IO_SUSPENDED`, and the new mobile test selector also matched Next's route announcer |
+| Focused auth + Guest browser rerun | All 6 passed after scoping the alert selector; includes all 4 Guest flows and both auth flows |
+| Final mobile header browser regression | Passed after the visual layout fix; validates readable name width at 320/390/768 and checks save/delete failure recovery |
+| Typecheck / lint | Passed, including corrected test types/selectors; final build also checks TypeScript |
+| Focused Guest unit tests | All 5 passed after refinements |
+| Production build | Passed, including the final UI changes; Windows EBUSY/EPERM errors on generated files were resolved by an approved elevated rerun |
+| `npm run test:e2e:list` | Passed: 7 non-mutating smoke tests discovered; mutating Guest flows are confined to the isolated auth configuration |
+| Visual/responsive review | Desktop overview/add/edit/details/delete and mobile read-only/details/error/unavailable screenshots inspected; no horizontal overflow at 320, 390, 768, 1024 and 1440 pixels |
+| Local preview health | HTTP 200 from `http://localhost:3000/api/v1/health` |
+
+Application/service implementation was self-reviewed for permissions, tenant isolation, safe fields, concurrency, optional clearing and failure behavior. No separate reviewer was invoked. No Atlas guest records were created or changed; screenshots and test outputs remain ignored. Earlier homepage/auth/Events/Tasks/Dashboard/Budget browser regressions passed during the full run except the interrupted authentication flow, which passed on rerun.
+
+Limits: familyName is an optional label; the broader PRD household conflict remains unresolved and no household workflow is enabled. Attendance is updated by the family. Public guest self-service RSVP, invitation sending, imports/exports, guest accounts, seating, accommodation, transportation and structured dietary fields are outside this increment. Contact links open default apps; they do not send invitations. No cross-browser live synchronization or automatic activity generation was added. Manual Atlas-backed Guest acceptance, separate code review and production validation remain pending. No commit, push or deployment was performed.
+
+### 2026-10-08 — Guest code review and commit/push handoff
+
+The delegated read-only review against `2a35a8bb84a6a11af7d460f6f174944801a088f3` included tracked changes and all 23 untracked files and found no actionable issues. It checked guest permissions, wedding isolation, validation, partial updates, attendance timestamps, deletion, UI recovery and dashboard integration. `git diff --check` passed. Tests, builds, browser flows and database operations were not rerun during that review.
+
+The user subsequently authorized committing and pushing the Guest changes with this updated status file to `dev`. Manual Atlas-backed Guest and Budget acceptance remain outstanding; this authorization does not claim acceptance or production validation. The preceding Budget commit `2a35a8b` was successfully pushed to `origin/dev`. Git history and the task handoff record the actual Guest commit/push outcome. Previously recorded implementation validation was not rerun for this Git handoff.
+
 ## Next handoff
 
-Budget & Expenses implementation, local verification and code review are complete; the user has authorized the Git handoff. Manual Atlas-backed Budget acceptance remains outstanding. Agree that validation or the next feature with the user after the push. Preserve unfinished modules as Coming soon and leave production deployment unclaimed. Earlier Dashboard validation remains recorded above. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before features touching unresolved specifications, email, uploads or reminders.
+Guest Management implementation, isolated validation and delegated code review are complete; the user authorized the Git handoff. Agree manual Atlas-backed Guest/Budget acceptance or the next feature with the user after the push. Preserve unfinished modules as Coming soon and leave production deployment unclaimed. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before features touching unresolved specifications, email, uploads or reminders.
 
 ## How to maintain this file
 
