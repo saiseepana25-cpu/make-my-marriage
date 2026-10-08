@@ -1,8 +1,10 @@
 # Dashboard overview
 
-The approved dashboard connects the saved wedding, Tasks, Events, Budget & Expenses and private Guest Management. Public guest RSVP/invitation sending, gallery, activities and wedding website remain `Coming soon`, without sample records or actions.
+The approved dashboard connects the saved wedding, Tasks, Events, Budget & Expenses, private Guest Management and Activities. Public guest RSVP/invitation sending, gallery and wedding website remain `Coming soon`, without sample records or actions.
 
-`GET /api/v1/dashboard` returns independent `tasks`, `events`, `budget` and `guests` results, each `{ status: "ready", data }` or `{ status: "error", data: null }`. Authentication errors fail the entire request. `?section=tasks`, `?section=events`, `?section=budget` or `?section=guests` returns just that section in the standard API envelope; section errors use the normal non-success HTTP response. The UI loads and retries the sections separately.
+`GET /api/v1/dashboard` returns independent `tasks`, `events`, `budget`, `guests` and `activities` results, each `{ status: "ready", data }` or `{ status: "error", data: null }`. Authentication errors fail the entire request. `?section=tasks`, `?section=events`, `?section=budget`, `?section=guests` or `?section=activities` returns just that section in the standard API envelope; section errors use the normal non-success HTTP response. The UI loads and retries the sections separately.
+
+Recent Activity shows the newest three saved manual/automatic updates, with details and full-feed links. Task completion on the dashboard refreshes this section immediately. Empty/loading/error states never substitute sample activity; other changes refresh on navigation/reload/Retry. See ../activities/README.md for generation and permission rules.
 
 Guests uses the shared wedding-global record summary: total, pending, attending and not attending, independent of directory filters and optional people counts. View guests opens the private directory; owner/admin Add guest opens the form. Loading/errors never show invented zero counts. See ../guests/README.md for its contract.
 

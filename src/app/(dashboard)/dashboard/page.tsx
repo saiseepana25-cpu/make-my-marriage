@@ -3,7 +3,7 @@ import { requirePageUser } from "@/features/auth/current-user";
 import { dashboardOverview } from "@/features/dashboard/service";
 import { hasPermission } from "@/features/auth/permissions";
 import { FutureModules, WeddingOverview } from "@/components/dashboard/dashboard-ui";
-import { DashboardEventsSection, DashboardTasksSection } from "@/components/dashboard/dashboard-sections";
+import { DashboardPlanning } from "@/components/dashboard/dashboard-planning";
 import { DashboardBudget } from "@/components/dashboard/dashboard-budget";
 import { DashboardGuests } from "@/components/dashboard/dashboard-guests";
 
@@ -18,8 +18,7 @@ export default async function Page() {
     <WeddingOverview wedding={wedding} asOf={asOf} canAddTasks={canAddTasks} canAddEvents={canAddEvents} />
     <div className="grid min-w-0 grid-cols-1 items-start gap-6 sm:gap-8 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="min-w-0 space-y-6 sm:space-y-8">
-        <DashboardTasksSection canAdd={canAddTasks} />
-        <DashboardEventsSection canAdd={canAddEvents} />
+        <DashboardPlanning canAddTasks={canAddTasks} canAddEvents={canAddEvents} />
       </div>
       <div className="min-w-0 space-y-5"><DashboardBudget manage={hasPermission(user.role, "budget:manage")} /><DashboardGuests manage={hasPermission(user.role, "guests:manage")} /><FutureModules /></div>
     </div>

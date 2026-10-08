@@ -8,7 +8,7 @@ import { dashboardNavigation } from "@/config/navigation";
 import type { CurrentUser } from "@/types/domain";
 
 const icons = ["grid_view", "calendar_month", "checklist", "group", "account_balance_wallet", "photo_library", "family_restroom", "history_edu", "language", "settings"] as const;
-const availableRoutes = new Set(["/dashboard", "/events", "/tasks", "/budget", "/guests"]);
+const availableRoutes = new Set(["/dashboard", "/events", "/tasks", "/budget", "/guests", "/activities"]);
 
 export function Sidebar({ couple, date, user }: { couple: string; date: string; user: CurrentUser }) {
   const pathname = usePathname();

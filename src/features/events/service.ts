@@ -8,6 +8,7 @@ import { TaskModel } from "@/models/task";
 import { ExpenseModel } from "@/models/expense";
 import { PhotoModel } from "@/models/photo";
 import { ActivityModel } from "@/models/activity";
+import { ensureActivityIndexes, recordSystemActivity } from "@/features/activities/record";
 import { enforceRateLimit } from "@/services/rate-limit/rate-limiter";
 import { eventPatch, parseEventInput } from "./requests";
 import type { WeddingEvent } from "./types";
@@ -23,6 +24,7 @@ const missing = () => new AppError("NOT_FOUND", "This event could not be found i
 async function mutationUser() {
   const user = await requirePermission("events:manage");
   await enforceRateLimit({ scope: "events", key: `user:${user.id}`, limit: 60, windowSeconds: 60 });
+  await ensureActivityIndexes();
   return user;
 }
 
@@ -55,8 +57,11 @@ export async function getEvent(id: string): Promise<WeddingEvent> {
 export async function createEvent(input: unknown): Promise<WeddingEvent> {
   const user = await mutationUser();
   const data = parseEventInput(input);
-  const event = await EventModel.create({ ...data, ...weddingScope(user), createdBy: user.id });
-  return serialize(event.toObject());
+  return mongoose.connection.transaction(async session => {
+    const [event] = await EventModel.create([{ ...data, ...weddingScope(user), createdBy: user.id }], { session });
+    await recordSystemActivity(user, session, { title: `Event created: ${event.name}`, description: `${user.name} created “${event.name}” at ${event.venue}.`, activityType: "Events", relatedEventId: event._id.toString() });
+    return serialize(event.toObject());
+  });
 }
 
 export async function updateEvent(id: string, input: unknown): Promise<WeddingEvent> {

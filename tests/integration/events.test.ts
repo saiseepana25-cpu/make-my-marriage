@@ -102,7 +102,7 @@ test("deleting an event keeps all four linked record types, clears links and lea
   expect((await ExpenseModel.findById(foreign.expense._id))?.eventId?.toString()).toBe(event.id);
   expect((await PhotoModel.findById(foreign.photo._id))?.eventId?.toString()).toBe(event.id);
   expect((await ActivityModel.findById(foreign.activity._id))?.relatedEventId?.toString()).toBe(event.id);
-  expect(await TaskModel.countDocuments()).toBe(2); expect(await ExpenseModel.countDocuments()).toBe(2); expect(await PhotoModel.countDocuments()).toBe(2); expect(await ActivityModel.countDocuments()).toBe(2);
+  expect(await TaskModel.countDocuments()).toBe(2); expect(await ExpenseModel.countDocuments()).toBe(2); expect(await PhotoModel.countDocuments()).toBe(2); expect(await ActivityModel.countDocuments()).toBe(3);
 });
 test("a failed unlink rolls back event removal and earlier reference changes", async () => {
   const event = await createEvent(details); const linked = await linkedRecords(event.id);

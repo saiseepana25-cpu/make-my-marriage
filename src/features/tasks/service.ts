@@ -7,6 +7,7 @@ import { isRecord, pagination, requireObjectId, validationError } from "@/lib/ap
 import { EventModel } from "@/models/event";
 import { TaskModel, type TaskRecord } from "@/models/task";
 import { enforceRateLimit } from "@/services/rate-limit/rate-limiter";
+import { ensureActivityIndexes, recordSystemActivity } from "@/features/activities/record";
 import { TASK_PRIORITIES, type CurrentUser, type TaskPriority } from "@/types/domain";
 import { parseTaskInput, taskDeadline, taskPatch, taskStatus } from "./requests";
 import type { TaskEventOption, WeddingTask } from "./types";
@@ -20,6 +21,7 @@ function serialize(task: TaskRecord & { _id: mongoose.Types.ObjectId }): Wedding
 const missing = () => new AppError("NOT_FOUND", "This task could not be found in your wedding workspace.", 404);
 async function limit(user: CurrentUser) {
   await enforceRateLimit({ scope: "tasks", key: `user:${user.id}`, limit: 60, windowSeconds: 60 });
+  await ensureActivityIndexes();
 }
 async function mutationUser() { const user = await requirePermission("tasks:manage"); await limit(user); return user; }
 
@@ -81,6 +83,7 @@ export async function createTask(input: unknown) {
   return mongoose.connection.transaction(async session => {
     await lockEvent(data.eventId, user, session);
     const [task] = await TaskModel.create([{ ...data, ...weddingScope(user), createdBy: user.id }], { session });
+    if (task.status === "COMPLETED") await recordSystemActivity(user, session, { title: `Task completed: ${task.title}`, description: `${user.name} completed “${task.title}”.`, activityType: "Tasks", relatedEventId: task.eventId?.toString() });
     return serialize(task.toObject());
   });
 }
@@ -93,7 +96,10 @@ export async function updateTask(id: string, input: unknown) {
     const data = parseTaskInput({ title: existing.title, description: existing.description, eventId: existing.eventId,
       dueAt: existing.dueAt, priority: existing.priority, status: existing.status, ...patch });
     await lockEvent(data.eventId, user, session);
-    task.set(data); await task.save({ session }); return serialize(task.toObject());
+    const completed = task.status !== "COMPLETED" && data.status === "COMPLETED";
+    task.set(data); await task.save({ session });
+    if (completed) await recordSystemActivity(user, session, { title: `Task completed: ${task.title}`, description: `${user.name} completed “${task.title}”.`, activityType: "Tasks", relatedEventId: task.eventId?.toString() });
+    return serialize(task.toObject());
   });
 }
 export async function updateTaskStatus(id: string, input: unknown) {
@@ -105,7 +111,11 @@ export async function updateTaskStatus(id: string, input: unknown) {
     const task = await TaskModel.findOne({ ...weddingScope(user), _id: taskId }).session(session);
     if (!task) throw missing();
     if (!canUpdateTaskStatus(user, serialize(task.toObject()))) throw new AppError("FORBIDDEN", "You cannot update this task's status.", 403);
-    task.status = status; await task.save({ session }); return serialize(task.toObject());
+    const completed = task.status !== "COMPLETED" && status === "COMPLETED";
+    if (completed) await lockEvent(task.eventId?.toString(), user, session);
+    task.status = status; await task.save({ session });
+    if (completed) await recordSystemActivity(user, session, { title: `Task completed: ${task.title}`, description: `${user.name} completed “${task.title}”.`, activityType: "Tasks", relatedEventId: task.eventId?.toString() });
+    return serialize(task.toObject());
   });
 }
 export async function deleteTask(id: string) {

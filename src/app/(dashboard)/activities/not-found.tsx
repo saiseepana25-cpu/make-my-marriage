@@ -1,0 +1,2 @@
+import { BackToActivities, activityCard } from "@/components/activities/activity-ui";
+export default function NotFound() { return <div className={`${activityCard} space-y-5`}><h1 className="font-display-md text-3xl text-primary">Update unavailable</h1><p className="text-sm text-secondary">This update may have been removed or does not belong to your wedding workspace.</p><BackToActivities /></div>; }

@@ -46,7 +46,7 @@ function SectionFailure({ kind, expired, retry }: { kind: "tasks" | "events"; ex
   </section>;
 }
 
-export function DashboardTasksSection({ canAdd }: { canAdd: boolean }) {
+export function DashboardTasksSection({ canAdd, onTaskUpdated }: { canAdd: boolean; onTaskUpdated?: () => void }) {
   const { state, reload } = useDashboardSection<DashboardTasks>("tasks");
   const [taskFailures, setTaskFailures] = useState<Record<string, string>>({});
   if (state.status === "loading") return <SectionSkeleton kind="tasks" />;
@@ -68,7 +68,7 @@ export function DashboardTasksSection({ canAdd }: { canAdd: boolean }) {
     <section aria-labelledby="attention-title" className={dashboardCard}>
       <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 id="attention-title" className="text-xl font-semibold sm:text-[22px]">Tasks Needing Attention</h2><p className="mt-1 text-xs text-secondary sm:text-sm">Overdue or due within the next 7 days.</p></div><Link href="/tasks" className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-primary">View all tasks ({counts.total})<Icon name="arrow_forward" /></Link></div>
       {attention.length ? <><ul className="mt-5 space-y-3.5">{attention.map(task => <li key={task.id} className="flex flex-wrap items-start gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low/70 p-4">
-        {task.canComplete ? <TaskStatusControl id={task.id} title={task.title} status={task.status} compact onUpdated={() => void reload()} onError={message => setTaskFailures(previous => ({ ...previous, [task.id]: message }))} /> : <Icon name="radio_button_unchecked" className="mt-1 text-lg text-secondary" />}
+        {task.canComplete ? <TaskStatusControl id={task.id} title={task.title} status={task.status} compact onUpdated={() => { reload(); onTaskUpdated?.(); }} onError={message => setTaskFailures(previous => ({ ...previous, [task.id]: message }))} /> : <Icon name="radio_button_unchecked" className="mt-1 text-lg text-secondary" />}
         <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><Link href={`/tasks/${task.id}`} className="break-words text-sm font-semibold hover:text-primary sm:text-base">{task.title}</Link>
           {isOverdue(task, asOf) ? <OverdueBadge /> : <span className="rounded-full bg-surface-container-highest px-2.5 py-1 text-xs text-on-surface-variant">Due soon</span>}</div>
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-secondary">

@@ -39,7 +39,6 @@ export function WeddingOverview({ wedding, asOf, canAddTasks, canAddEvents }: {
 
 const futureModules = [
   { title: "Gallery", description: "View and share wedding photos.", icon: "photo_library" },
-  { title: "Recent Activity", description: "Follow wedding planning updates.", icon: "history_edu" },
   { title: "Wedding Website", description: "Share wedding details and events with guests.", icon: "language" },
 ] as const;
 export function FutureModules() {

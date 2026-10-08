@@ -7,6 +7,7 @@ import { EventModel } from "@/models/event";
 import { ExpenseModel, type ExpenseRecord } from "@/models/expense";
 import { WeddingModel } from "@/models/wedding";
 import { enforceRateLimit } from "@/services/rate-limit/rate-limiter";
+import { ensureActivityIndexes, recordSystemActivity } from "@/features/activities/record";
 import { PAYMENT_STATUSES, type CurrentUser, type PaymentStatus } from "@/types/domain";
 import { paymentStatus, roundedMoney } from "./format";
 import { expensePatch, parseBudgetInput, parseExpenseInput } from "./requests";
@@ -31,6 +32,7 @@ async function expenseUser(permission: "expenses:read" | "expenses:manage" | "bu
 }
 async function limit(user: CurrentUser) {
   await enforceRateLimit({ scope: "expenses", key: `user:${user.id}`, limit: 60, windowSeconds: 60 });
+  await ensureActivityIndexes();
 }
 export async function expenseEventOptions() {
   const user = await expenseUser("expenses:read");
@@ -77,6 +79,7 @@ export async function createExpense(input: unknown) {
   return mongoose.connection.transaction(async session => {
     await lockEvent(data.eventId, user, session);
     const [expense] = await ExpenseModel.create([{ ...data, paymentStatus: paymentStatus(data.amount, data.paidAmount), ...weddingScope(user), createdBy: user.id }], { session });
+    await recordSystemActivity(user, session, { title: `Expense added: ${expense.name}`, description: `${user.name} added “${expense.name}” for ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(expense.amount)}.`, activityType: "Expenses", relatedEventId: expense.eventId?.toString() });
     return serialize(expense.toObject());
   });
 }

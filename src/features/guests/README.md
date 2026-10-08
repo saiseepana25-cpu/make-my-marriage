@@ -21,6 +21,8 @@ All service operations resolve the authenticated user and central permissions. Q
 
 Creation records an initial `rsvpUpdatedAt`. Later updates change it only when saved `rsvpStatus` or `numberAttending` changes; name/contact/family/notes/invited edits and identical attendance saves preserve it. Transactions retry concurrent partial edits without dropping unrelated fields. Normal createdAt/updatedAt remain database-managed. Deletion is scoped and hard, returning 204; missing or foreign records return 404.
 
+The Activities increment (2026-10-08) records guest creation and actual attendance status/count changes atomically with their mutations. Other edits, identical attendance saves and deletion do not generate updates. Attendance entries explicitly describe family-recorded changes, not guest self-service RSVP. See ../activities/README.md.
+
 ## Interaction and scope boundaries
 
 Forms retain input after failed saves, focus invalid fields and lock actions during requests. Delete confirmation focuses Cancel, supports Escape when idle, returns focus, prevents duplicate requests and supports retry. Successful deletion refreshes record totals; other same-family records remain intact. Empty, no-match, loading, independent error, read-only and unavailable states use the approved design direction.

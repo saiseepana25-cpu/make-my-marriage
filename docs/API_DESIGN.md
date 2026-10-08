@@ -209,6 +209,10 @@ Budget & Expenses implementation milestone (2026-10-07): the dashboard now also 
 | PUT | /api/v1/activities/{activityId} | Creator / OWNER / ADMIN | Edit manual activity | SYSTEM activities are read-only |
 | DELETE | /api/v1/activities/{activityId} | Creator / OWNER / ADMIN | Delete manual activity | SYSTEM activities cannot be deleted through normal route |
 
+Activities implementation milestone (2026-10-08): the protected feed accepts manual `title` (required, maximum 120), optional `description` (5000), `relatedEventId` and free-text `activityType` (80). Partial edits retain omitted values; null/empty optional values clear. Wedding scope, createdBy, sourceType and createdAt are server-controlled. Creator/OWNER/ADMIN may modify manual records; SYSTEM records remain read-only for every role. Same-origin mutations use bounded 32 KiB JSON and durable 60-per-minute per-user activity limits.
+
+The list supports literal title/description `search`, `sourceType=MANUAL|SYSTEM`, `relatedEventId=<ObjectId>|wedding-wide`, and standard pagination, returning `activities`, scoped event choices, `pagination`, and `asOf`. Ordering is descending createdAt then _id. `GET /api/v1/dashboard?section=activities` returns the newest three updates, and the full dashboard response includes an independent activities ready/error section. Event creation, task completion, expense creation, guest creation and organizer attendance changes atomically generate SYSTEM updates; existing history is not backfilled. No schema fields or collections are added. See [Activities implementation notes](../src/features/activities/README.md).
+
 # 12. Guest Management APIs
 
 | Method | Endpoint | Access | Purpose | Notes |

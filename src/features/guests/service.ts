@@ -5,6 +5,8 @@ import { AppError } from "@/lib/api/errors";
 import { pagination, requireObjectId, validationError } from "@/lib/api/validation";
 import { GuestModel, type GuestRecord } from "@/models/guest";
 import { enforceRateLimit } from "@/services/rate-limit/rate-limiter";
+import { ensureActivityIndexes, recordSystemActivity } from "@/features/activities/record";
+import { attendanceLabels } from "./format";
 import { RSVP_STATUSES, type CurrentUser, type RsvpStatus } from "@/types/domain";
 import { guestPatch, parseGuestInput } from "./requests";
 import type { GuestList, GuestSummary, WeddingGuest } from "./types";
@@ -23,7 +25,7 @@ async function guestUser(permission: "guests:read" | "guests:manage") {
   await indexes;
   return user;
 }
-async function limit(user: CurrentUser) { await enforceRateLimit({ scope: "guests", key: `user:${user.id}`, limit: 60, windowSeconds: 60 }); }
+async function limit(user: CurrentUser) { await enforceRateLimit({ scope: "guests", key: `user:${user.id}`, limit: 60, windowSeconds: 60 }); await ensureActivityIndexes(); }
 export async function guestFamilies(): Promise<string[]> {
   const user = await guestUser("guests:read");
   const families = await GuestModel.distinct("familyName", weddingScope(user));
@@ -68,8 +70,11 @@ export async function getGuest(id: string) {
 export async function createGuest(input: unknown) {
   const user = await guestUser("guests:manage"); await limit(user);
   const data = parseGuestInput(input);
-  const guest = await GuestModel.create({ ...data, ...weddingScope(user), rsvpUpdatedAt: new Date() });
-  return serialize(guest.toObject());
+  return mongoose.connection.transaction(async session => {
+    const [guest] = await GuestModel.create([{ ...data, ...weddingScope(user), rsvpUpdatedAt: new Date() }], { session });
+    await recordSystemActivity(user, session, { title: `Guest added: ${guest.name}`, description: `${user.name} added “${guest.name}” to the guest list. Attendance: ${attendanceLabels[guest.rsvpStatus]}.`, activityType: "Guests" });
+    return serialize(guest.toObject());
+  });
 }
 export async function updateGuest(id: string, input: unknown) {
   const user = await guestUser("guests:manage"); await limit(user);
@@ -79,8 +84,11 @@ export async function updateGuest(id: string, input: unknown) {
     const guest = await GuestModel.findOne({ ...weddingScope(user), _id: guestId }).session(session);
     if (!guest) throw missing();
     const data = parseGuestInput({ ...serialize(guest.toObject()), ...patch });
-    if (guest.rsvpStatus !== data.rsvpStatus || (guest.numberAttending ?? undefined) !== data.numberAttending) guest.rsvpUpdatedAt = new Date();
-    guest.set(data); await guest.save({ session }); return serialize(guest.toObject());
+    const attendanceChanged = guest.rsvpStatus !== data.rsvpStatus || (guest.numberAttending ?? undefined) !== data.numberAttending;
+    if (attendanceChanged) guest.rsvpUpdatedAt = new Date();
+    guest.set(data); await guest.save({ session });
+    if (attendanceChanged) await recordSystemActivity(user, session, { title: `Guest attendance updated: ${guest.name}`, description: `${user.name} recorded ${attendanceLabels[guest.rsvpStatus].toLowerCase()} for “${guest.name}”. Number attending: ${guest.numberAttending ?? "not provided"}.`, activityType: "Guests" });
+    return serialize(guest.toObject());
   });
 }
 export async function deleteGuest(id: string) {

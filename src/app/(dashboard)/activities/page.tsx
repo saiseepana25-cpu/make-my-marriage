@@ -1,5 +1,9 @@
-import { ProtectedPlaceholderPage } from "@/components/shared/protected-placeholder-page";
+import type { Metadata } from "next";
+import { requirePageUser } from "@/features/auth/current-user";
+import { ActivityOverview } from "@/components/activities/activity-overview";
+export const metadata: Metadata = { title: "Activities", robots: { index: false, follow: false } };
 
-export default function Page() {
-  return <ProtectedPlaceholderPage title="Activities" description="Updates from your wedding workspace." />;
+export default async function Page({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
+  await requirePageUser();
+  return <ActivityOverview deleted={(await searchParams).deleted === "1"} />;
 }

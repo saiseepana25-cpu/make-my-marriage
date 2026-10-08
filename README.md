@@ -2,7 +2,7 @@
 
 A responsive wedding planning and collaboration application for Indian couples and families.
 
-The foundation, homepage, and account/wedding onboarding milestone are implemented. Planning CRUD and public wedding functionality remain future features. The architecture is a Next.js full-stack modular monolith intended for Vercel: App Router pages and Node.js Route Handlers share feature services, MongoDB Atlas stores application data, and private AWS S3 storage holds photos. Guests use /wedding/[slug] without accounts.
+The foundation, homepage, account/wedding onboarding, Events, Tasks, Dashboard, Budget & Expenses, private Guest Management and Activities are implemented. Photo uploads and public wedding functionality remain future features. The architecture is a Next.js full-stack modular monolith intended for Vercel: App Router pages and Node.js Route Handlers share feature services, MongoDB Atlas stores application data, and private AWS S3 storage is prepared for photos. Guests use /wedding/[slug] without accounts.
 
 **/docs is the authoritative project documentation.** Read PRD.md, SYSTEM_DESIGN.md, DATABASE_DESIGN.md and API_DESIGN.md before architectural changes. The approved [authentication amendment](docs/AUTHENTICATION_DECISIONS.md) resolves onboarding, sessions, password policy and auth counter storage. Other conflicts remain in [FOUNDATION_DECISIONS.md](docs/FOUNDATION_DECISIONS.md). Read [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the current handoff.
 
@@ -22,9 +22,9 @@ src/
   app/
     (marketing)/              Homepage and marketing layout
     (auth)/                   Login and two-step signup; password recovery deferred
-    (dashboard)/              Saved wedding welcome screen and planning placeholders
+    (dashboard)/              Dashboard and private planning pages; deferred placeholders
     wedding/[slug]/           Public guest placeholder
-    api/v1/                   Health, auth and current-wedding APIs
+    api/v1/                   Health, auth, wedding and private planning APIs
   components/layout/          AppShell, header, sidebar and PageContainer
   components/shared/          Placeholder and protected placeholder components
   features/                   auth, weddings, events, tasks, guests, expenses,
@@ -37,7 +37,7 @@ src/
 docs/                         Authoritative V1 documents and decision register
 tests/unit/                   Component, security and schema foundation tests
 tests/integration/            Isolated MongoDB transaction/session/rate-limit tests
-tests/e2e/                    Playwright smoke and complete auth journey tests
+tests/e2e/                    Playwright smoke and isolated auth/planning journeys
 public/                       Reviewed static assets only
 ```
 

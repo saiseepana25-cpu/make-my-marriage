@@ -8,13 +8,13 @@ The product and technical specifications remain in [PRD.md](PRD.md), [SYSTEM_DES
 
 ## Current state
 
-**Latest increment (2026-10-08): Guest Management is implemented from the finalized Stitch designs and verified with disposable local databases.** `/guests` provides saved individual guest records, attendance totals, search/filters, details, editing and confirmed deletion; the dashboard uses real guest totals. Implementation self-review, desktop/mobile checks and the delegated read-only code review are complete. The user authorized commit/push to `dev`; manual Atlas acceptance and production validation remain pending. Git history records the commit/push outcome.
+**Latest increment (2026-10-08): Activities is implemented from the finalized Stitch designs and verified with disposable local databases.** The private feed supports manual updates, automatic planning updates, search/filters, details and confirmed manual deletion. Recent Activity on the dashboard uses saved records. Implementation self-review, isolated desktop/mobile checks and delegated code review are complete. The user authorized commit/push to `dev`; manual Atlas acceptance and production validation remain pending. Git history records the commit/push outcome.
 
-The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events, shared Tasks, Dashboard, Budget & Expenses and private Guest Management are implemented. The user reports recent changes were pushed; earlier app changes were deployed to Vercel. Authentication, Events, Tasks and Dashboard have earlier manual Atlas-backed reviews. Budget and Guest implementation verification uses disposable local databases and has not changed Atlas records. The local preview at `http://localhost:3000/` returned 200 from its health endpoint during this increment. Production deployment has not been independently verified.
+The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events, shared Tasks, Dashboard, Budget & Expenses, private Guest Management and Activities are implemented. The user reports earlier changes were pushed; earlier app changes were deployed to Vercel. Authentication, Events, Tasks and Dashboard have earlier manual Atlas-backed reviews. Budget, Guest and Activities implementation verification uses disposable local databases and has not changed Atlas records. Production deployment has not been independently verified.
 
-Signup atomically creates an OWNER and wedding; login/logout use persisted 30-day sessions. Events and Tasks provide saved CRUD and protected role policies. Dashboard shows wedding identity/countdown, task progress/attention, upcoming events, real budget totals and guest record counts, with independent loading/retry. Budget supports saved zero/unset budgets, expense CRUD, derived payment status, totals, breakdowns and filters. Guests supports the eight approved fields, optional/zero counts, family labels, contact links, manually maintained attendance and timestamps. OWNER/ADMIN manage guests; FAMILY_MEMBER can view. Guest self-service RSVP and invitation sending remain Coming soon, alongside Gallery, Recent Activity and Wedding Website. Homepage previews are illustrative; no planning samples are seeded into real weddings.
+Signup atomically creates an OWNER and wedding; login/logout use persisted 30-day sessions. Events and Tasks provide saved CRUD and protected role policies. Dashboard shows wedding identity/countdown, task progress/attention, upcoming events, real budget totals, guest record counts and the newest three activities, with independent loading/retry. Budget supports saved zero/unset budgets, expense CRUD, derived payment status, totals, breakdowns and filters. Guests supports the eight approved fields, optional/zero counts, family labels, contact links, manually maintained attendance and timestamps. OWNER/ADMIN manage guests; FAMILY_MEMBER can view. Activities supports manual updates and automatic event creation, task completion, expense creation, guest creation and attendance changes. Automatic records are read-only. Guest self-service RSVP and invitation sending remain Coming soon, alongside Gallery and Wedding Website. Homepage previews are illustrative; no planning samples or historical activities are seeded into real weddings.
 
-Groom-first name order remains throughout. Guest validation passed 79 unit/component tests and 38 isolated integration tests. Browser coverage now includes 26 flows: the first full run passed 24, with an authentication network suspension and an ambiguous new test selector; a focused six-flow rerun passed after correction. The final mobile layout fix passed its focused browser check. Typecheck, lint, focused Guest unit tests, the final production build and browser discovery passed. Desktop/mobile screenshots were inspected and widths 320–1440 had no horizontal overflow. These checks do not claim production or manual Atlas acceptance.
+Groom-first name order remains throughout. Activities validation passed 84 unit/component tests, 46 isolated integration tests and all 30 isolated browser flows, including regressions for the existing features. Typecheck, lint, production build and standard browser discovery passed. Desktop/mobile screenshots were inspected and Activities browser checks cover widths 320–1440 without horizontal overflow. Initial worker/database timeouts and an ambiguous test selector were resolved before the passing reruns; details are recorded below. These checks do not claim production or manual Atlas acceptance.
 
 ## Milestone summary
 
@@ -33,7 +33,8 @@ Groom-first name order remains throughout. Guest validation passed 79 unit/compo
 | Dashboard overview | Implemented; user-reported code review complete; fresh isolated regressions and manual Atlas-backed desktop/mobile checks passed | 2026-10-07 |
 | Manual review after Dashboard code-review changes | Completed; no blocking issue found in checked flows, separate QA records retained, browser signed out | 2026-10-07 |
 | Budget & Expenses | Implemented, locally verified, code-reviewed and pushed in `2a35a8b`; manual Atlas acceptance pending | 2026-10-07 |
-| Guest Management | Implemented, locally verified and code-reviewed; commit/push authorized; manual Atlas acceptance pending | 2026-10-08 |
+| Guest Management | Implemented, locally verified, code-reviewed and pushed in `fa9e3f0`; manual Atlas acceptance pending | 2026-10-08 |
+| Activities and dashboard Recent Activity | Implemented, isolated validation passed and code-reviewed; commit/push authorized; manual Atlas acceptance pending | 2026-10-08 |
 | Other wedding planning features | Pending | Dashboard future modules display Coming soon; await the user's next instruction |
 
 ## Progress history
@@ -469,9 +470,46 @@ The delegated read-only review against `2a35a8bb84a6a11af7d460f6f174944801a088f3
 
 The user subsequently authorized committing and pushing the Guest changes with this updated status file to `dev`. Manual Atlas-backed Guest and Budget acceptance remain outstanding; this authorization does not claim acceptance or production validation. The preceding Budget commit `2a35a8b` was successfully pushed to `origin/dev`. Git history and the task handoff record the actual Guest commit/push outcome. Previously recorded implementation validation was not rerun for this Git handoff.
 
+### 2026-10-08 — Approved Stitch Activities implemented
+
+Implemented the finalized Activities desktop designs in Stitch project `9719362010133116550`, with responsive layouts in code. References: Overview `14d96c620a2d45b4852070293e4ce9db`, Add `ed8b16fb24b8420db3a277f65abca101`, Edit `788fd8e2824b4c5e9c1909b0dc1d9f4e`, Manual Details `b436dc62e27c4f3fa49c9725d22bacfb`, Automatic Details `2e2df9ed716f46ba898fc9007f1118be`, latest Delete `920390c893f4427ca3ef149b1e4a42ad`, permission/interaction references and Dashboard `fbd77f3daf634141ae3d855c5db2f033`. Historical duplicate delete screens were not used. Design reference boards are not product pages.
+
+Implemented scope:
+
+- Protected `/activities`, `/activities/new`, `/activities/[activityId]` and `/activities/[activityId]/edit`, with shared fonts/colors, groom-first workspace identity and enabled navigation. Ten-record feed pagination, literal title/description search, manual/automatic and event/Wedding-wide filters, IST Today/Yesterday/date grouping, original creation timestamps and saved author/event names.
+- Manual title (required, 120), optional description (5000), existing related event and free-text category (80), live unsaved preview and category suggestions. Create/edit/confirmed hard delete, validation focus, preserved failed-save values, pending/duplicate-submit locks, delete Cancel/Escape/focus return, retry, loading/empty/no-results and unavailable states. No extra fields, collections, indexes or dependencies were introduced; only the documented Activity index is provisioned lazily.
+- Private GET/POST `/api/v1/activities` and GET/PUT/DELETE `/api/v1/activities/[activityId]`, using session-derived wedding scope, allowlisted DTOs, same-origin mutations, bounded 32 KiB JSON and durable 60-per-minute user limits. OWNER/ADMIN may change manual updates; FAMILY_MEMBER may create and change their own manual updates. SYSTEM updates cannot be edited/deleted by any role. Server-owned authorship/source/original creation time survive editing; missing/foreign references never disclose another wedding's names.
+- Automatic updates for event creation, transitions into Completed (including creation as completed), expense creation, guest creation and actual attendance status/count changes. Each record commits atomically with its source mutation; recording failure rolls back the mutation. Identical completed/attendance saves do not duplicate updates. Reopening and completing a task again is a new completion. Attendance wording describes family-recorded attendance, not guest self-service RSVP.
+- Event link validation coordinates transactionally with deletion, including completed tasks and manual updates. Deleting events retains activities and clears their links; deleting a manual update removes only that activity. No backfill of historical actions or sample activity is performed.
+- The dashboard has an independent real Recent Activity section showing the newest three records, loading/error/retry/empty states and feed/details/add links. Completing a task there refreshes Recent Activity immediately. Other modules remain usable if this section fails. Gallery and Wedding Website remain Coming soon.
+
+Validation:
+
+| Check | Actual result |
+| --- | --- |
+| Full unit/component suite | 84 tests across 19 files passed; initial run encountered a worker startup timeout and an ambiguous Category label selector, corrected before the passing rerun |
+| Full isolated integration suite | 46 tests across 7 files passed; initial parallel run encountered local database/worker timeouts, including event setup failures; isolated rerun passed |
+| Final focused Activities integration rerun | All 8 passed after bounding the dashboard query to its newest three records |
+| `npm run test:e2e:auth` | All 30 flows passed, including four Activities flows and existing auth/homepage/Events/Tasks/Dashboard/Budget/Guests regressions |
+| Typecheck / lint | Passed |
+| Production build | Passed; all new pages and APIs compiled successfully |
+| `npm run test:e2e:list` | Passed: 7 standard non-mutating smoke tests; Activities mutations run only in the guarded isolated configuration |
+| Visual/responsive review | Desktop feed/add/manual details and mobile form/pending deletion/dashboard screenshots inspected; browser assertions cover 320/390/768/1024/1440 pixels and save/delete retries |
+| `git diff --check` | Passed |
+
+Coverage includes tenant/role isolation, SYSTEM immutability, preserved authorship/chronology, literal filters/pagination, optional clearing, concurrent partial edits/event deletion, atomic automatic recording and rollback, origin/body limits, durable 429 limits, input-preserving retries, unavailable states, independent dashboard failure and immediate task-completion refresh. All integration/browser mutations used guarded disposable local MongoDB replica sets; no Atlas records were changed. Implementation self-review covered the service/API boundaries, permissions, transactions and UI recovery. No separate code reviewer was invoked. Screenshots/test outputs remain ignored.
+
+Limits: no historical backfill, photo activity, unimplemented-feature activity, general event/task/expense edit/delete generation, live cross-browser synchronization, guest self-service RSVP, notifications or individual-account onboarding was added. Shared credentials appear under the signed-in account's name, as stated in the UI. The existing account/role model remains unchanged. Separate code review, manual Atlas-backed acceptance and production validation remain pending. No commit, push or deployment was performed.
+
+### 2026-10-08 — Activities code review and commit/push handoff
+
+The delegated read-only review against `fa9e3f028db546d87706c35e4372e137a6e366d7` included all 23 tracked changes and 25 untracked files and found no actionable issues. It checked Activities CRUD, permissions, wedding scope, transactional recording, dashboard integration, UI recovery and test coverage. `git diff --check` passed. Tests, builds, browser flows and database operations were not rerun during that review.
+
+The user subsequently authorized committing and pushing the reviewed Activities changes with this updated status file to `dev`. Manual Atlas-backed Activities, Budget and Guest acceptance remain outstanding; this authorization does not claim acceptance or production validation. Guest commit `fa9e3f0` was successfully pushed to `origin/dev`. Git history and the task handoff record the actual Activities commit/push result. Previously recorded implementation validation was not rerun for this documentation/Git handoff.
+
 ## Next handoff
 
-Guest Management implementation, isolated validation and delegated code review are complete; the user authorized the Git handoff. Agree manual Atlas-backed Guest/Budget acceptance or the next feature with the user after the push. Preserve unfinished modules as Coming soon and leave production deployment unclaimed. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before features touching unresolved specifications, email, uploads or reminders.
+Activities implementation, isolated validation and delegated code review are complete; the user authorized the Git handoff. Agree manual Atlas-backed Activities/Budget/Guest acceptance or the next feature with the user after the push. Preserve unfinished modules as Coming soon and leave production deployment unclaimed. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before features touching unresolved specifications, email, uploads or reminders.
 
 ## How to maintain this file
 

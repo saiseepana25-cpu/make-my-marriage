@@ -4,6 +4,7 @@ import { handleApi, apiSuccess } from "@/lib/api/response";
 import { validationError } from "@/lib/api/validation";
 import { budgetSummary } from "@/features/expenses/service";
 import { guestSummary } from "@/features/guests/service";
+import { recentActivities } from "@/features/activities/service";
 
 export const runtime = "nodejs";
 export function GET(request: Request) {
@@ -15,12 +16,14 @@ export function GET(request: Request) {
     if (section === "events") return apiSuccess(await dashboardEvents());
     if (section === "budget") return apiSuccess(await budgetSummary());
     if (section === "guests") return apiSuccess(await guestSummary());
-    if (section !== null) validationError("Choose tasks, events, budget or guests for the dashboard section.");
-    const [tasks, events, budget, guests] = await Promise.all([
+    if (section === "activities") return apiSuccess(await recentActivities());
+    if (section !== null) validationError("Choose tasks, events, budget, guests or activities for the dashboard section.");
+    const [tasks, events, budget, guests, activities] = await Promise.all([
       dashboardSection(dashboardTasks, "dashboard.tasks"), dashboardSection(dashboardEvents, "dashboard.events"),
       dashboardSection(budgetSummary, "dashboard.budget"),
       dashboardSection(guestSummary, "dashboard.guests"),
+      dashboardSection(recentActivities, "dashboard.activities"),
     ]);
-    return apiSuccess({ tasks, events, budget, guests });
+    return apiSuccess({ tasks, events, budget, guests, activities });
   }, "dashboard.read");
 }
