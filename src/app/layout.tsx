@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import localFont from "next/font/local";
+import { WorkspaceNavigationProvider } from "@/components/layout/workspace-navigation";
 import "./globals.css";
 
 const manrope = localFont({ src: "../assets/fonts/manrope.ttf", variable: "--font-manrope", weight: "200 800", display: "swap" });
@@ -21,7 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className={`${manrope.variable} ${playfair.variable} app-theme min-h-screen bg-background text-foreground antialiased`}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-surface focus:p-4">Skip to content</a>
-        {children}
+        <WorkspaceNavigationProvider>{children}</WorkspaceNavigationProvider>
       </body>
     </html>
   );

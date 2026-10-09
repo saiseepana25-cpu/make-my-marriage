@@ -5,9 +5,11 @@ import { requirePageUser } from "@/features/auth/current-user";
 import { getCurrentWedding } from "@/features/weddings/service";
 
 export async function AppShell({ children }: { children: ReactNode }) {
-  const [user, wedding] = await Promise.all([requirePageUser(), getCurrentWedding()]);
-  const couple = `${wedding.groomName} & ${wedding.brideName}`;
-  const date = new Intl.DateTimeFormat("en-IN", { dateStyle: "long", timeZone: "UTC" }).format(new Date(wedding.weddingDate));
+  const user = await requirePageUser();
+  // Identity is decorative; a failed wedding read must not swallow the page's retry state.
+  const wedding = await getCurrentWedding().catch(() => null);
+  const couple = wedding ? `${wedding.groomName} & ${wedding.brideName}` : "Your wedding";
+  const date = wedding ? new Intl.DateTimeFormat("en-IN", { dateStyle: "long", timeZone: "UTC" }).format(new Date(wedding.weddingDate)) : "";
   return (
     <>
       <Sidebar couple={couple} date={date} user={user} />

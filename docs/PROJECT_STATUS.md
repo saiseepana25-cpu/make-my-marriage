@@ -1,6 +1,6 @@
 # Make My Marriage — Project Status
 
-Last updated: **2026-10-08**
+Last updated: **2026-10-09**
 
 This is the living implementation log for Make My Marriage. Read it before starting development and update it after each major feature or substantial feature change. It records what exists, what was verified, and what remains to be built.
 
@@ -8,13 +8,13 @@ The product and technical specifications remain in [PRD.md](PRD.md), [SYSTEM_DES
 
 ## Current state
 
-**Latest increment (2026-10-08): Activities is implemented from the finalized Stitch designs and verified with disposable local databases.** The private feed supports manual updates, automatic planning updates, search/filters, details and confirmed manual deletion. Recent Activity on the dashboard uses saved records. Implementation self-review, isolated desktop/mobile checks and delegated code review are complete. The user authorized commit/push to `dev`; manual Atlas acceptance and production validation remain pending. Git history records the commit/push outcome.
+**Latest increment (2026-10-09): Wedding Settings and its history review fixes are implemented and code-reviewed.** OWNER/ADMIN can edit the four wedding identity fields, with a live unsaved preview, persisted updates and guarded navigation; FAMILY_MEMBER sees saved read-only details. Saved shell identity updates only after persistence, while the existing slug, budget/content and event schedules/venues remain unchanged. History fixes cover Back/Forward, untagged entries in either direction, new and pre-existing native fragment entries and router-retained wrappers after effect remounts. Final validation passed 100 unit tests, nine Settings browser tests, typecheck, lint, production build and browser discovery. The final delegated review found no actionable issues; the user authorized the Git handoff to `dev`. Manual Atlas acceptance and production validation remain pending; no deployment is claimed.
 
-The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events, shared Tasks, Dashboard, Budget & Expenses, private Guest Management and Activities are implemented. The user reports earlier changes were pushed; earlier app changes were deployed to Vercel. Authentication, Events, Tasks and Dashboard have earlier manual Atlas-backed reviews. Budget, Guest and Activities implementation verification uses disposable local databases and has not changed Atlas records. Production deployment has not been independently verified.
+The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events, shared Tasks, Dashboard, Budget & Expenses, private Guest Management, Activities and Wedding Settings are implemented. The user reports earlier changes were pushed; earlier app changes were deployed to Vercel. Authentication, Events, Tasks and Dashboard have earlier manual Atlas-backed reviews. Budget, Guest, Activities and Settings implementation verification uses disposable local databases and has not changed Atlas records. Production deployment has not been independently verified.
 
 Signup atomically creates an OWNER and wedding; login/logout use persisted 30-day sessions. Events and Tasks provide saved CRUD and protected role policies. Dashboard shows wedding identity/countdown, task progress/attention, upcoming events, real budget totals, guest record counts and the newest three activities, with independent loading/retry. Budget supports saved zero/unset budgets, expense CRUD, derived payment status, totals, breakdowns and filters. Guests supports the eight approved fields, optional/zero counts, family labels, contact links, manually maintained attendance and timestamps. OWNER/ADMIN manage guests; FAMILY_MEMBER can view. Activities supports manual updates and automatic event creation, task completion, expense creation, guest creation and attendance changes. Automatic records are read-only. Guest self-service RSVP and invitation sending remain Coming soon, alongside Gallery and Wedding Website. Homepage previews are illustrative; no planning samples or historical activities are seeded into real weddings.
 
-Groom-first name order remains throughout. Activities validation passed 84 unit/component tests, 46 isolated integration tests and all 30 isolated browser flows, including regressions for the existing features. Typecheck, lint, production build and standard browser discovery passed. Desktop/mobile screenshots were inspected and Activities browser checks cover widths 320–1440 without horizontal overflow. Initial worker/database timeouts and an ambiguous test selector were resolved before the passing reruns; details are recorded below. These checks do not claim production or manual Atlas acceptance.
+Groom-first name order remains throughout. Settings validation passed 89 unit/component tests. All 52 integration cases have passing coverage across the full run and a focused rerun after two existing Activities timeouts. The full browser run passed 33/34 flows; after correcting an ambiguous test selector, all 11 focused Settings/standard-smoke flows passed. Typecheck, lint, production build and standard browser discovery passed. Desktop/mobile screenshots were inspected; Settings browser checks cover widths 320–1440, including maximum-length names/location, without horizontal overflow. Details and initial failures are recorded below. These checks do not claim production or manual Atlas acceptance.
 
 ## Milestone summary
 
@@ -34,7 +34,8 @@ Groom-first name order remains throughout. Activities validation passed 84 unit/
 | Manual review after Dashboard code-review changes | Completed; no blocking issue found in checked flows, separate QA records retained, browser signed out | 2026-10-07 |
 | Budget & Expenses | Implemented, locally verified, code-reviewed and pushed in `2a35a8b`; manual Atlas acceptance pending | 2026-10-07 |
 | Guest Management | Implemented, locally verified, code-reviewed and pushed in `fa9e3f0`; manual Atlas acceptance pending | 2026-10-08 |
-| Activities and dashboard Recent Activity | Implemented, isolated validation passed and code-reviewed; commit/push authorized; manual Atlas acceptance pending | 2026-10-08 |
+| Activities and dashboard Recent Activity | Implemented, isolated validation passed, code-reviewed and pushed in `de9a85f`; manual Atlas acceptance pending | 2026-10-08 |
+| Wedding Settings | Implemented and code-reviewed; history regressions and final build pass; Git handoff authorized; manual acceptance pending | 2026-10-09 |
 | Other wedding planning features | Pending | Dashboard future modules display Coming soon; await the user's next instruction |
 
 ## Progress history
@@ -507,9 +508,93 @@ The delegated read-only review against `fa9e3f028db546d87706c35e4372e137a6e366d7
 
 The user subsequently authorized committing and pushing the reviewed Activities changes with this updated status file to `dev`. Manual Atlas-backed Activities, Budget and Guest acceptance remain outstanding; this authorization does not claim acceptance or production validation. Guest commit `fa9e3f0` was successfully pushed to `origin/dev`. Git history and the task handoff record the actual Activities commit/push result. Previously recorded implementation validation was not rerun for this documentation/Git handoff.
 
+### 2026-10-08 — Approved Stitch Wedding Settings implemented
+
+Implemented the approved desktop references in Stitch project `9719362010133116550`: Owner/Admin `15f46a980b3c40d785e017c1df7783bb`, Family Read Only `03da18e451d14144a111bef2496fe411`, Unsaved Changes Dialog `74ca6b2ad8614cbb993b86b20a4729a4`, and complete State Reference `95f2bb9ad62f47b39af36695e74d562f`. The incomplete historical board `75b01acecd374b1598f5ea70799e08fd` was excluded. State boards are references, not product pages. Responsive mobile layouts follow the approved desktop design in code.
+
+Implemented scope:
+
+- Protected `/settings`, enabled workspace navigation, and exactly four required fields: groomName first (100), brideName second (100), weddingDate (valid date-only, past dates allowed), and location (200). Dates use midnight UTC for storage and UTC for display. Shared V1 credentials and the existing roles remain unchanged; FAMILY_MEMBER sees saved read-only values.
+- Prepopulated values, character counts, live draft preview, validation and first-invalid-field focus. Pristine Save is disabled; pending saves lock inputs/Cancel/duplicate submissions. Failed saves retain all inputs and preview with normal retry controls. Success establishes the saved baseline, displays “Wedding details updated successfully.” and remains on Settings. Server refresh updates the saved shell only after persistence.
+- Dirty Cancel/workspace navigation/logout prompts “Discard unsaved changes?” with Keep editing initially focused, Escape/cancellation preserving inputs and returning focus, and confirmed discard continuing the action. Confirmed discard resets values, so failed logout cannot leave future edits unprotected. Browser history traversal uses the Navigation API where available; older browsers retain a same-document Back fallback and native document-exit confirmation. Reload/close uses native unsaved-change confirmation. No autosave or durable client draft was added.
+- Loading, failed-load Retry, session-expired Log in and unavailable states use truthful saved data. Decorative shell identity falls back if its wedding read fails so the Settings loading/retry state remains reachable.
+- Private `PUT /api/v1/weddings/current` uses centralized OWNER/ADMIN authorization, server-derived wedding scope, a four-field allowlist, same-origin checks, bounded 16 KiB JSON and durable 60-per-minute user limits. Atomic partial field updates preserve omitted/concurrent unrelated values. The response uses the existing safe wedding projection. Names never regenerate websiteSlug; wedding date/location changes never modify event schedules/venues or budget/content. No automatic activity, schema field, collection, dependency or public exposure was added.
+
+Validation:
+
+| Check | Actual result |
+| --- | --- |
+| Unit/component suite | All 89 tests across 20 files passed; initial Settings label selectors were corrected before the passing rerun |
+| Isolated integration coverage | Full run: 50/52 passed; two existing Activities tests timed out on the local replica set. Focused rerun: all 8 Activities tests passed. All 6 new Settings tests passed in the full run |
+| Focused Settings browser suite | All 4 passed after fixing Back navigation protection; covers persistence, shell refresh, UTC dates, retained slug/event data, validation/retry, pending locks, dirty navigation and FAMILY_MEMBER read-only access |
+| Full isolated browser regression | 33/34 passed. The new failed-logout assertion also matched Next's route announcer; corrected by scoping it to the header. Final focused Settings + standard-smoke rerun: all 11 passed, including Back/Forward, failed logout followed by new guarded edits, mobile drawer Escape/focus and maximum-length names/location |
+| Typecheck / lint / production build | Passed |
+| Standard browser discovery | Passed: 7 non-mutating smoke tests; Settings mutations are excluded from the standard configuration and run only against the guarded disposable database |
+| Visual/responsive review | Desktop form/dialog/read-only and mobile failure/preview/dialog/success screenshots inspected; assertions cover widths 320, 390, 768, 1024 and 1440, including maximum-length unbroken input, without horizontal overflow |
+| Local preview health | HTTP 200 from `http://localhost:3000/api/v1/health` |
+| `git diff --check` | Passed; final documentation check recorded before handoff |
+
+Implementation self-review covered service permissions/scope, safe projections, partial-update concurrency, stable slug/event data, error recovery and navigation. Tests use guarded disposable local MongoDB replica sets; no Atlas records were changed. Generated screenshots/test artifacts remain ignored. No separate reviewer was invoked.
+
+Limits: this increment excludes account settings, story/cover/slug editing, uploads, website/theme/status/password management, family management, ownership changes and deletion. Gallery remains deferred at the user's request. Browser automation covers Chromium; other browsers' history/exit confirmation behavior is not independently verified. Separate code review, manual Atlas-backed acceptance and production validation remain pending. No commit, push or deployment was performed.
+
+### 2026-10-08 — Settings history fallback review fix
+
+Fixed the delegated review finding in browsers without the Navigation API. The old fallback always restored with Forward and replayed with Back, leaving the draft under the wrong URL or discarding to the wrong page after a Forward attempt. The workspace now tracks history-entry positions while clean as well as dirty, preserves Next.js router state, restores the inverse traversal, and replays the requested direction/distance only after confirmation. Restore events do not reach the router, so keeping edits retains the Settings page and draft. Native Navigation API handling and browser-exit confirmation remain in place.
+
+Added four history regressions for Back/Forward and two-entry traversals, including cancellation followed by discard, replaceState and preserved router state. Added a browser regression that disables the Navigation API and exercises Settings → Events → Back → edit → Forward, both dialog choices, and Back cancellation/discard. It verifies that edits are not persisted by discarding.
+
+Validation: the full unit/component suite passed 93 tests across 21 files, including all four history regressions. All five isolated Settings browser tests passed. Typecheck, lint, production build and standard browser discovery passed (7 smoke tests). The initial sandboxed unit-test worker timed out before running tests; the focused and full reruns outside the sandbox passed. Browser mutations used the guarded disposable database; no Atlas records were changed. Integration tests were not rerun because this fix changes client navigation only. Final `git diff --check` passed.
+
+No commit, push or deployment was performed. Actual Firefox/Safari execution remains unverified; the fallback was exercised in Chromium with the Navigation API disabled. Manual Atlas-backed Settings acceptance remains outstanding.
+
+### 2026-10-09 — Pre-workspace history traversal review fix
+
+Reproduced the follow-up review finding with a regression that creates untagged same-document `/` → `/signup` → `/dashboard` → `/settings` entries before installing the workspace guard. The previous implementation restored a three-entry Back jump to `/signup` instead of Settings.
+
+Removed the assumed one-entry delta for unknown destinations. The existing navigation provider now lives in the root layout so tracking continues across marketing, authentication and workspace routes. Untagged same-document destinations precede tracker installation. The guard walks forward to its original marked entry, suppresses intermediate router events, measures the actual distance and replays that distance after confirmation. Pristine traversals are automatically replayed; newly reached untagged entries receive their measured position while retaining router state. Keeping edits restores the Settings URL and draft without truncating the history stack.
+
+Added dirty/pristine unit regressions for untagged three-entry jumps and a browser fixture that creates the untagged same-document history before hydration with the Navigation API disabled. The fixture checks cancellation followed by confirmed discard and unchanged persisted wedding data. Actual Firefox/Safari execution and manual Atlas acceptance remain unverified. No commit or push was performed.
+
+Validation: all six history regressions passed after the dirty pre-workspace case reproduced the bug before the fix. The final isolated browser run passed all 15 Settings, authentication and standard-smoke tests after the root-provider adjustment. Typecheck, lint and standard discovery (7 tests) passed. The initial browser fixture used the wrong homepage link label, then did not reliably construct the required same-document history; the final fixture creates those entries explicitly before hydration. Browser mutations used the guarded disposable database; no Atlas records were changed.
+
+Before the root-provider adjustment, the full unit suite passed 95 tests across 21 files and a production build passed after an elevated retry. The subsequent unit run passed 86 tests but the API response suite could not import the locally missing Mongoose package. Restored installed dependencies with `npm install --ignore-scripts --no-audit --no-fund`, without package-version or lockfile changes; the final full rerun passed all 95 tests across 21 files. The final production build remains blocked by Windows/OneDrive EPERM on a generated `.next/static` directory despite elevated retries. A generated-cache move also encountered locks and was incomplete; any cache files it moved are under ignored `test-results`. This is not recorded as a successful final build. Integration tests were not rerun for this client-navigation change. Final `git diff --check` passed.
+
+### 2026-10-09 — Native hash navigation and retained history wrapper fixes
+
+Fixed the delegated review finding where native fragment links bypassed `pushState`, were mistaken for pre-workspace entries and left the fallback guard restoring indefinitely. The guard now tags native fragment entries and retains the current Next.js router state, so subsequent Settings Back/Forward navigation remains protected.
+
+The actual browser regression exposed a related development remount problem: Next.js can retain an old guard's history wrappers inside its own patch. The old wrapper overwrote the new guard's positions after a native hash navigation, leaving the Settings form under the Dashboard URL during restoration. Cleaned-up wrappers now delegate without changing entry positions. Added unit regressions for consecutive native hash entries and retained wrappers, plus a browser flow using the real homepage Skip to content link followed by Dashboard, Settings edits, Back cancellation and confirmed discard. Temporary diagnostic logging was removed.
+
+Validation: all 97 unit/component tests across 21 files passed with two workers; all eight focused history regressions passed. All seven isolated Settings browser tests passed after both fixes. Final typecheck and lint passed; standard browser discovery passed (7 smoke tests), and `git diff --check` passed. The initial full unit run had two unrelated timeouts while other checks ran; a sandboxed two-worker rerun could not start one worker. The successful final full run used two workers outside the sandbox. Initial browser runs reproduced the retained-wrapper defect; one overlapping attempt was rejected by the test server's occupied-port check and affected temporary trace output. The final browser run was isolated and passed. No Atlas records were changed; integration tests were not rerun for this client-history fix.
+
+A production build passed after the first hash-entry change, before the retained-wrapper correction. The final build and elevated retry failed with Windows `EBUSY` while unlinking `.next/server/app/icon.svg/route.js`; this is not a successful final build. Actual Firefox/Safari execution, manual Atlas acceptance and production validation remain outstanding. No commit or push was performed.
+
+### 2026-10-09 — Untagged Forward destination review fix
+
+Fixed the delegated review finding for retained same-document history entries ahead of the entry where the guard starts. The measurement search now counts signed steps and reverses direction when an out-of-range `history.go` produces no event, instead of leaving router events suppressed forever. Pending discard confirmation is replayed only after finding the original entry. Cleanup clears the boundary timer. Untagged Back behavior, native hash tracking and inactive wrapper delegation remain covered.
+
+Added dirty/pristine unit regressions for an untagged two-entry Forward jump, including Keep editing, confirmation before restoration completes, exact replay and subsequent Back. Added an isolated browser fixture with untagged future entries, checking Settings URL restoration, retained edits and discard to the actual Tasks page without persisting the draft.
+
+Validation: all ten focused history regressions and all 99 unit/component tests across 21 files passed. The final Settings browser suite passed all eight tests against the guarded disposable local database. The initial browser run passed the navigation checks but its final assertion expected “Tasks” inside a page headed “Wedding checklist”; corrected that assertion and reran the entire Settings suite successfully. Typecheck, lint, production build, standard browser discovery (7 tests) and final `git diff --check` passed. The generated-file locks recorded in the prior entry did not block this build. No Atlas records were changed. Integration tests were not rerun for this client-history-only change. Actual Firefox/Safari execution and manual Atlas/production acceptance remain unverified. No commit or push was performed.
+
+### 2026-10-09 — Pre-existing fragment traversal review fix
+
+Fixed the delegated review finding where Back to a null-state fragment entry created before guard installation was incorrectly assigned a new forward position. A growing history stack now identifies newly created native fragment entries; older or ambiguous fragment entries use signed-distance measurement. Confirmed replay is handled before new-entry detection, and replaying a null-state fragment preserves the current Next.js router state. This keeps subsequent dirty Forward restoration in the correct direction without leaving the guard stuck at the boundary.
+
+Added a unit regression using pre-existing `/settings`, `/settings#one` and `/settings#two` entries, including clean Back, dirty Forward cancellation, confirmed replay and subsequent Back. Added the equivalent browser fixture before hydration, verifying restored URL, retained draft, discard and unchanged saved wedding data with the Navigation API disabled.
+
+Validation: all eleven focused history tests and all 100 unit/component tests across 21 files passed. All nine Settings browser tests passed against the guarded disposable local database. Typecheck, lint, production build, standard browser discovery (7 tests) and final `git diff --check` passed. No Atlas records were changed. Integration tests were not rerun for this client-navigation-only change. Actual Firefox/Safari execution and manual Atlas/production acceptance remain unverified. No commit or push was performed.
+
+### 2026-10-09 — Wedding Settings final review and Git handoff
+
+The final delegated read-only review against `de9a85f9c2a782b3506e183e5fb2747bad97af56` included tracked and untracked changes and found no actionable issues; the staged diff was empty. It checked Settings validation/persistence, role and wedding isolation, safe projections, navigation/history guards and regression coverage. No files, databases or external services were changed during the review, and tests/builds were not rerun by the reviewer.
+
+Checked this status file against the latest implementation, validation and review, then updated its current summary, milestone table and handoff. The user authorized committing the reviewed Settings code and this status file and pushing to `origin/dev`. This entry accompanies that Git handoff; Git history and the task response record the actual commit and remote push result. Previously recorded passing validation (100 unit tests, nine Settings browser tests, typecheck, lint, production build and browser discovery) was not rerun for this documentation/Git-only handoff. Final `git diff --check` passed. Manual Atlas acceptance and production deployment remain unverified.
+
 ## Next handoff
 
-Activities implementation, isolated validation and delegated code review are complete; the user authorized the Git handoff. Agree manual Atlas-backed Activities/Budget/Guest acceptance or the next feature with the user after the push. Preserve unfinished modules as Coming soon and leave production deployment unclaimed. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before features touching unresolved specifications, email, uploads or reminders.
+Complete the authorized Settings Git handoff to `dev`, then agree the next feature with the user. Manual Atlas-backed Settings/Budget/Guest/Activities acceptance remains outstanding; keep Gallery deferred and unfinished modules as Coming soon. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before features touching unresolved specifications, email, uploads or reminders. Leave production deployment unclaimed.
 
 ## How to maintain this file
 

@@ -178,6 +178,8 @@ Dashboard implementation milestone (2026-10-07): the approved overview currently
 
 Budget & Expenses implementation milestone (2026-10-07): the dashboard now also returns an independent `budget` section; `?section=budget` returns the same real summary as `GET /api/v1/budget`. This supersedes the earlier dashboard milestone's Coming soon budget boundary. Budget/expense details are described under §13; guests/RSVP, activities and photos remain future modules.
 
+Wedding Settings implementation milestone (2026-10-08): the approved `/settings` increment enables `PUT /api/v1/weddings/current` for only `groomName` (100 characters), `brideName` (100), `weddingDate` (valid date-only `YYYY-MM-DD`) and `location` (200). Supplied fields must be nonempty; omitted fields are preserved. OWNER/ADMIN can edit and FAMILY_MEMBER can read. Names are trimmed; dates, including past dates, are stored at midnight UTC. The safe response matches the current GET projection. Browser-supplied scope and fields outside this increment cannot alter stored data. Same-origin mutations use bounded 16 KiB JSON and a durable 60-per-minute per-user wedding limit. Atomic field updates leave slug, content, budget and event schedules/venues untouched; no new collection or schema field is added. Broader story/slug/cover editing and deletion remain deferred. See [Wedding Settings implementation notes](../src/features/weddings/README.md).
+
 # 9. Event APIs
 
 | Method | Endpoint | Access | Purpose | Notes |
