@@ -1,6 +1,6 @@
 # Make My Marriage — Project Status
 
-Last updated: **2026-10-09**
+Last updated: **2026-10-14**
 
 This is the living implementation log for Make My Marriage. Read it before starting development and update it after each major feature or substantial feature change. It records what exists, what was verified, and what remains to be built.
 
@@ -8,13 +8,13 @@ The product and technical specifications remain in [PRD.md](PRD.md), [SYSTEM_DES
 
 ## Current state
 
-**Latest increment (2026-10-09): Wedding Settings and its history review fixes are implemented and code-reviewed.** OWNER/ADMIN can edit the four wedding identity fields, with a live unsaved preview, persisted updates and guarded navigation; FAMILY_MEMBER sees saved read-only details. Saved shell identity updates only after persistence, while the existing slug, budget/content and event schedules/venues remain unchanged. History fixes cover Back/Forward, untagged entries in either direction, new and pre-existing native fragment entries and router-retained wrappers after effect remounts. Final validation passed 100 unit tests, nine Settings browser tests, typecheck, lint, production build and browser discovery. The final delegated review found no actionable issues; the user authorized the Git handoff to `dev`. Manual Atlas acceptance and production validation remain pending; no deployment is claimed.
+**Latest increment: Wedding Website is implemented (2026-10-09) and code-reviewed (2026-10-14).** The protected sharing page displays the stable full guest URL, Copy/Open, saved wedding details and an event summary. The public link requires no account/password and shows allowlisted wedding identity, countdown, saved celebrations, venues and safe external Maps/livestream links. Desktop/mobile layouts and recovery states are implemented; RSVP and Gallery remain Coming soon. Implementation validation passed 106 unit/component tests, all 57 integration tests, three Website browser flows, four Dashboard flows, seven smoke flows, typecheck, lint, production build and browser discovery. The delegated review found no actionable issues; the user authorized committing and pushing to `dev`. Manual Atlas acceptance and production validation remain pending; no deployment is claimed.
 
-The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events, shared Tasks, Dashboard, Budget & Expenses, private Guest Management, Activities and Wedding Settings are implemented. The user reports earlier changes were pushed; earlier app changes were deployed to Vercel. Authentication, Events, Tasks and Dashboard have earlier manual Atlas-backed reviews. Budget, Guest, Activities and Settings implementation verification uses disposable local databases and has not changed Atlas records. Production deployment has not been independently verified.
+The foundation scaffold, approved Stitch homepage, authentication with wedding onboarding, Events, shared Tasks, Dashboard, Budget & Expenses, private Guest Management, Activities, Wedding Settings and Wedding Website are implemented. The user reports earlier changes were pushed; earlier app changes were deployed to Vercel. Authentication, Events, Tasks and Dashboard have earlier manual Atlas-backed reviews. Budget, Guest, Activities, Settings and Website implementation verification uses disposable local databases and has not changed Atlas records. Production deployment has not been independently verified.
 
-Signup atomically creates an OWNER and wedding; login/logout use persisted 30-day sessions. Events and Tasks provide saved CRUD and protected role policies. Dashboard shows wedding identity/countdown, task progress/attention, upcoming events, real budget totals, guest record counts and the newest three activities, with independent loading/retry. Budget supports saved zero/unset budgets, expense CRUD, derived payment status, totals, breakdowns and filters. Guests supports the eight approved fields, optional/zero counts, family labels, contact links, manually maintained attendance and timestamps. OWNER/ADMIN manage guests; FAMILY_MEMBER can view. Activities supports manual updates and automatic event creation, task completion, expense creation, guest creation and attendance changes. Automatic records are read-only. Guest self-service RSVP and invitation sending remain Coming soon, alongside Gallery and Wedding Website. Homepage previews are illustrative; no planning samples or historical activities are seeded into real weddings.
+Signup atomically creates an OWNER and wedding; login/logout use persisted 30-day sessions. Events and Tasks provide saved CRUD and protected role policies. Dashboard shows wedding identity/countdown, task progress/attention, upcoming events, real budget totals, guest record counts and the newest three activities, with independent loading/retry. Budget supports saved zero/unset budgets, expense CRUD, derived payment status, totals, breakdowns and filters. Guests supports the eight approved fields, optional/zero counts, family labels, contact links, manually maintained attendance and timestamps. OWNER/ADMIN manage guests; FAMILY_MEMBER can view. Activities supports manual updates and automatic event creation, task completion, expense creation, guest creation and attendance changes. Automatic records are read-only. Website sharing links to existing Settings/Events for OWNER/ADMIN; FAMILY_MEMBER can view/share. Its public responses exclude private planning, financial, account, guest and member data. Guest self-service RSVP and invitation sending remain Coming soon, alongside Gallery and Family management. Homepage previews are illustrative; no planning samples or historical activities are seeded into real weddings.
 
-Groom-first name order remains throughout. Settings validation passed 89 unit/component tests. All 52 integration cases have passing coverage across the full run and a focused rerun after two existing Activities timeouts. The full browser run passed 33/34 flows; after correcting an ambiguous test selector, all 11 focused Settings/standard-smoke flows passed. Typecheck, lint, production build and standard browser discovery passed. Desktop/mobile screenshots were inspected; Settings browser checks cover widths 320–1440, including maximum-length names/location, without horizontal overflow. Details and initial failures are recorded below. These checks do not claim production or manual Atlas acceptance.
+Groom-first name order remains throughout. Latest full suites passed 106 unit/component tests across 22 files and 57 integration tests across nine files. Website browser checks cover widths 320–1440, including maximum-length names/location without horizontal overflow; desktop/mobile screenshots were inspected. Settings retains its earlier final passing review and history coverage. Details and corrected initial test failures are recorded below. These checks do not claim production or manual Atlas acceptance.
 
 ## Milestone summary
 
@@ -35,7 +35,8 @@ Groom-first name order remains throughout. Settings validation passed 89 unit/co
 | Budget & Expenses | Implemented, locally verified, code-reviewed and pushed in `2a35a8b`; manual Atlas acceptance pending | 2026-10-07 |
 | Guest Management | Implemented, locally verified, code-reviewed and pushed in `fa9e3f0`; manual Atlas acceptance pending | 2026-10-08 |
 | Activities and dashboard Recent Activity | Implemented, isolated validation passed, code-reviewed and pushed in `de9a85f`; manual Atlas acceptance pending | 2026-10-08 |
-| Wedding Settings | Implemented and code-reviewed; history regressions and final build pass; Git handoff authorized; manual acceptance pending | 2026-10-09 |
+| Wedding Settings | Implemented, code-reviewed and pushed in `7abce06`; history regressions and final build pass; manual acceptance pending | 2026-10-09 |
+| Wedding Website | Implemented and code-reviewed; isolated validation and production build passed; Git handoff authorized; manual acceptance pending | 2026-10-09 / 2026-10-14 |
 | Other wedding planning features | Pending | Dashboard future modules display Coming soon; await the user's next instruction |
 
 ## Progress history
@@ -592,9 +593,40 @@ The final delegated read-only review against `de9a85f9c2a782b3506e183e5fb2747bad
 
 Checked this status file against the latest implementation, validation and review, then updated its current summary, milestone table and handoff. The user authorized committing the reviewed Settings code and this status file and pushing to `origin/dev`. This entry accompanies that Git handoff; Git history and the task response record the actual commit and remote push result. Previously recorded passing validation (100 unit tests, nine Settings browser tests, typecheck, lint, production build and browser discovery) was not rerun for this documentation/Git-only handoff. Final `git diff --check` passed. Manual Atlas acceptance and production deployment remain unverified.
 
+### 2026-10-09 — Wedding Website implementation
+
+Implemented the approved Guest View, Workspace View and their state screens from Stitch project `9719362010133116550`. Recorded the user's direct shareable-link access decision and narrowed Website increment in [WEDDING_WEBSITE_DECISIONS.md](WEDDING_WEBSITE_DECISIONS.md), referenced it from the specifications/AGENTS and marked the password conflict resolved. Broader deferred requirements remain intact.
+
+- Protected `/wedding-website` uses the existing shell and authenticated APIs. It presents the complete stable URL, clipboard success/failure with manual selection/retry, saved couple/date/location, first-three celebration summary and guest identity preview. OWNER/ADMIN can navigate to Settings/Events; FAMILY_MEMBER can read/share without management actions. Dashboard and sidebar now link to Website.
+- Public `/wedding/[slug]` renders saved groom-first identity, UTC wedding date, India-day countdown, chronological celebrations and venues. The first three events render on the server; bounded Load more preserves loaded cards on failures. Overnight times include both dates/years and IST. External Maps queries are encoded; livestream links require HTTPS without credentials. No photos/map thumbnails, account/password gate or public mutations are added.
+- New GET APIs explicitly allowlist five wedding fields and eight guest-safe event fields, resolve scope from the saved slug, ignore private cookies/query-supplied wedding IDs and send no-store responses. Invalid/missing slugs return API 404 and invalid pagination returns 400. Financial/planning/member/account/storage metadata never enters public DTOs.
+- Loading, empty, independent celebration failure/retry, expired private sessions and unavailable-link states are implemented. RSVP/Gallery are inactive Coming soon; no schema, collection, index, dependency, upload or publication lifecycle was added. Saved Settings/Event changes appear on open/refresh through the original slug.
+
+Validation:
+
+| Check | Actual result |
+| --- | --- |
+| Full unit/component suite | 106 tests across 22 files passed with two workers, including six Website tests |
+| Full isolated integration suite | All 57 tests across nine files passed, including five Website privacy/scope/pagination/update/failure tests |
+| Website browser flows | All three passed on the final rerun; sharing/real clipboard/new tab, anonymous reads, schedule pagination retry, saved updates, partial failure, expiry, family access, empty/long content, countdown and unavailable links |
+| Dashboard and standard smoke regressions | All four Dashboard and seven smoke tests passed in the preceding combined run |
+| Typecheck / lint / production build | Passed |
+| Standard browser discovery | Passed: seven non-mutating smoke tests; Website mutation flows are excluded from the standard configuration |
+| Visual/responsive review | Desktop guest/workspace and mobile guest/copy fallback/long empty content/unavailable screenshots inspected; overflow assertions passed at 320, 390, 768, 1024 and 1440 pixels |
+
+Initial typecheck issues (nullable stored livestream and a test assertion option), a missing unit router mock and React's render-time clock lint finding were corrected before passing validation. The first combined browser run passed 13/14 tests; the last assertion incorrectly required the streamed unavailable page to have HTTP 404. Next.js documents HTTP 200 after streaming begins. The corrected flow checks the friendly unavailable UI and actual API 404; all three Website flows then passed. This does not change API semantics.
+
+Implementation self-review covered guest-safe serialization, slug-derived isolation, existing private permissions, origin/link handling, abort/retry behavior and lazy credential setup. No separate reviewer was invoked. All database mutations used guarded disposable local MongoDB; no Atlas records were changed. Test/screenshots remain ignored. Manual Atlas-backed acceptance, Firefox/Safari execution and production validation remain outstanding. No commit, push or deployment was performed.
+
+### 2026-10-14 — Wedding Website review and Git handoff
+
+The delegated read-only review against `7abce0657936954588743c938d08f6ee532c5f36` included unstaged and relevant untracked changes; the staged diff was empty. It found no actionable issues after checking public response allowlists, slug-derived wedding scope, private role controls, URL validation, pagination/retry behavior and applicable Next.js conventions. The reviewer did not modify files or rerun tests/browser checks.
+
+Checked the project status against the implementation and latest review, updated the current summary, milestones and next handoff, and preserved the original implementation validation and limitations. The user authorized committing the reviewed Website code/documentation and pushing to `origin/dev`. This entry accompanies that Git handoff; Git history and the task response record the actual commit and remote push result. Tests/builds were not rerun for this documentation/Git-only handoff; the passing implementation checks remain recorded under 2026-10-09. Final `git diff --check` passed. Manual Atlas-backed acceptance, Firefox/Safari execution and production validation remain outstanding.
+
 ## Next handoff
 
-Complete the authorized Settings Git handoff to `dev`, then agree the next feature with the user. Manual Atlas-backed Settings/Budget/Guest/Activities acceptance remains outstanding; keep Gallery deferred and unfinished modules as Coming soon. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before features touching unresolved specifications, email, uploads or reminders. Leave production deployment unclaimed.
+Complete the authorized Wedding Website Git handoff to `dev`, then agree the next step with the user. Manual testing of the sharing page and anonymous public link against Atlas, including saved Settings/event changes and mobile layouts, remains outstanding alongside Settings/Budget/Guest/Activities acceptance. Keep Gallery deferred and unfinished modules as Coming soon. Consult [FOUNDATION_DECISIONS.md](FOUNDATION_DECISIONS.md) before features touching unresolved specifications, email, uploads or reminders. Leave production deployment unclaimed.
 
 ## How to maintain this file
 

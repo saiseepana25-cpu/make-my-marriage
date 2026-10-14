@@ -39,10 +39,10 @@ export function WeddingOverview({ wedding, asOf, canAddTasks, canAddEvents }: {
 
 const futureModules = [
   { title: "Gallery", description: "View and share wedding photos.", icon: "photo_library" },
-  { title: "Wedding Website", description: "Share wedding details and events with guests.", icon: "language" },
 ] as const;
 export function FutureModules() {
   return <aside aria-label="Upcoming planning features" className="space-y-5">
+    <section className={dashboardCard}><Icon name="language" className="text-2xl text-primary-container" /><h2 className="mt-4 text-lg font-semibold">Wedding Website</h2><p className="mt-2 text-sm leading-relaxed text-on-surface-variant">Share saved wedding details and events with guests.</p><Link href="/wedding-website" className={`${secondaryAction} mt-5`}>View wedding website</Link></section>
     {futureModules.map(module => <section key={module.title} className={dashboardCard}>
       <div className="flex flex-wrap items-center justify-between gap-2"><Icon name={module.icon} className="text-2xl text-primary-container" />
         <span className="rounded-full bg-secondary-container px-3 py-1 text-[11px] font-semibold text-on-secondary-container">Coming soon</span>

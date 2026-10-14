@@ -65,9 +65,9 @@ test("private workspace denies anonymous visitors", async ({ page }) => {
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test("public wedding placeholder is accessible without login", async ({ page }) => {
-  await page.goto("/wedding/sai-priya");
-  await expect(page.getByRole("heading", { name: "Wedding website", exact: true })).toBeVisible();
+test("invalid public wedding link shows a friendly unavailable state without login", async ({ page }) => {
+  await page.goto("/wedding/invalid!slug");
+  await expect(page.getByRole("heading", { name: "Wedding website unavailable", exact: true })).toBeVisible();
 });
 
 test("health and current-user endpoints have stable envelopes", async ({ request }) => {

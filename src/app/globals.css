@@ -33,6 +33,10 @@
   scroll-margin-top: 6rem;
 }
 
+.wedding-website [id] {
+  scroll-margin-top: 8rem;
+}
+
 .landing-page summary::-webkit-details-marker {
   display: none;
 }

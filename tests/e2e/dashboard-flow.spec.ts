@@ -38,7 +38,8 @@ test("dashboard empty, saved task/event data, completion and real destination li
   await expect(page.getByRole("heading", { name: "Your wedding checklist starts here" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Your celebrations start here" })).toBeVisible();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
-  await expect(page.getByRole("complementary", { name: "Upcoming planning features" }).getByText("Coming soon", { exact: true })).toHaveCount(2);
+  await expect(page.getByRole("complementary", { name: "Upcoming planning features" }).getByText("Coming soon", { exact: true })).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "View wedding website", exact: true })).toHaveAttribute("href", "/wedding-website");
   await expect(page.getByRole("navigation", { name: "Wedding workspace" }).getByRole("link", { name: "Budget", exact: true })).toHaveCount(1);
   await capture(page, "empty-desktop", 1440); await capture(page, "empty-mobile", 390);
   const { event, task } = await seed(page); await page.reload();

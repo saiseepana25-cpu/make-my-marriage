@@ -269,6 +269,8 @@ Expense list filters: literal `search` on name, exact `category`, `eventId` (Obj
 
 # 15. Public Wedding and RSVP APIs
 
+Approved Wedding Website increment (2026-10-09): the two public wedding/events GET endpoints below are implemented as defined in [WEDDING_WEBSITE_DECISIONS.md](WEDDING_WEBSITE_DECISIONS.md). Guest access requires no account/password. Wedding responses contain only groomName, brideName, weddingDate, location and websiteSlug; paginated events contain id, name, startAt, optional endAt, venue, optional location/description and a safe HTTPS livestreamUrl. Events sort chronologically by startAt then _id. The guest page loads three initially, with standard API pagination defaults/maxima retained. Photos/RSVP mutations remain deferred; private sharing reuses existing protected current-wedding/Events reads.
+
 | Method | Endpoint | Access | Purpose | Notes |
 | --- | --- | --- | --- | --- |
 | GET | /api/v1/public/weddings/{slug} | Public | Get public wedding page data | Only guest-safe fields |

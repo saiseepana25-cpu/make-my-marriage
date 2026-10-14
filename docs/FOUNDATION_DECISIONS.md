@@ -6,7 +6,7 @@ This file records conflicts discovered during scaffolding; it does not itself re
 
 | Area | Conflicting sources | Clarification required / scaffold boundary |
 | --- | --- | --- |
-| Public website passwords | PRD FR-17/18, 14.4 and acceptance criteria require passwords; SYSTEM_DESIGN §15 excludes them; DATABASE_DESIGN has no password field. | Decide whether password protection belongs in V1. No password gate or password field is implemented. |
+| Public website passwords — resolved 2026-10-09 | PRD FR-17/18, 14.4 and acceptance criteria require passwords; SYSTEM_DESIGN §15 excludes them; DATABASE_DESIGN has no password field. | The user approved direct shareable-link access without guest accounts/passwords. See [WEDDING_WEBSITE_DECISIONS.md](WEDDING_WEBSITE_DECISIONS.md); no password gate/field is introduced. |
 | Households | PRD FR-10/11/15 and acceptance criteria require household records/RSVP; DATABASE_DESIGN §5.5/12 and API_DESIGN §12 use individual guests and exclude a households collection. | Confirm individual guests plus optional familyName versus household entities. No household architecture is implemented. |
 | Receipts/documents | PRD FR-09/24 includes attachments; SYSTEM_DESIGN §10/15, DATABASE_DESIGN §12 and API_DESIGN §24 exclude them. | Confirm the narrowed image-only scope. No attachment architecture is implemented. |
 | Internal notifications | PRD FR-22 requires read/unread notifications; SYSTEM_DESIGN §3 specifies email only; DATABASE_DESIGN §12 excludes notifications. | Confirm email plus activities versus a notification center. No notification center/collection is implemented. |

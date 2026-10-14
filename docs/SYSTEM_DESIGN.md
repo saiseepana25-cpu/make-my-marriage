@@ -19,6 +19,8 @@ Figure 1. High-level architecture flow for Make My Marriage V1
 
 # 1. Document Purpose
 
+Approved Wedding Website increment (2026-10-09): [WEDDING_WEBSITE_DECISIONS.md](WEDDING_WEBSITE_DECISIONS.md) defines direct public link access, allowlisted wedding/events reads and the protected sharing page, preserving this modular monolith and existing collections.
+
 Approved amendment (2026-10-05): [AUTHENTICATION_DECISIONS.md](AUTHENTICATION_DECISIONS.md) finalizes atomic signup, 30-day database sessions, and MongoDB-backed auth limits. Email verification and password recovery are deferred from this milestone.
 
 This document defines the finalized system design and architecture for Make My Marriage V1. It captures the agreed product-architecture decisions, high-level request flow, component responsibilities, data design, security and validation approach, deployment model, and the implementation plan for V1.

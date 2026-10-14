@@ -17,6 +17,8 @@ Figure 1. MongoDB collection overview and key relationships for Make My Marriage
 
 # 1. Document Purpose
 
+Approved Wedding Website increment (2026-10-09): [WEDDING_WEBSITE_DECISIONS.md](WEDDING_WEBSITE_DECISIONS.md) uses existing wedding/event fields without adding a password, publication state, collection or index.
+
 Approved amendment (2026-10-05): [AUTHENTICATION_DECISIONS.md](AUTHENTICATION_DECISIONS.md) defines atomic wedding/OWNER registration and the exact sessions and rate_limits infrastructure schemas/indexes. The eight business collections below retain their fields.
 
 This document defines the database design for Make My Marriage V1. It explains the MongoDB collection structure, field design, relationships, indexes, enums, delete behavior, and the main data rules agreed for the first version of the product.
